@@ -19,6 +19,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import UPIInspector from "@/components/modules/UPIInspector";
+import QRScanner from "@/components/modules/QRScanner";
 
 /* ─────────────────────────────────────────
    Navigation module definitions
@@ -37,7 +38,7 @@ const MODULES = [
     label: "QR & Link Scanner",
     labelHi: "QR व लिंक स्कैनर",
     icon: QrCode,
-    status: "coming" as const,
+    status: "live" as const,
     description: "Malicious QR & trap-link scanner",
   },
   {
@@ -264,7 +265,10 @@ export default function WorkbenchShell() {
           {activeModule === "upi" && (
             <UPIInspector lang={lang} onAuditComplete={recordAudit} />
           )}
-          {activeModule !== "upi" && (
+          {activeModule === "qr" && (
+            <QRScanner lang={lang} onAuditComplete={recordAudit} />
+          )}
+          {activeModule !== "upi" && activeModule !== "qr" && (
             <ComingSoon module={currentModule} lang={lang} />
           )}
         </main>
