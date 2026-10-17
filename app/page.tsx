@@ -20,6 +20,10 @@ import {
 } from "lucide-react";
 import UPIInspector from "@/components/modules/UPIInspector";
 import QRScanner from "@/components/modules/QRScanner";
+import JobScreener from "@/components/modules/JobScreener";
+// Saniya: Import Module 4 & Module 5 here when ready:
+// import DeepfakeInspector from "@/components/modules/DeepfakeInspector";
+// import DocumentInspector from "@/components/modules/DocumentInspector";
 
 /* ─────────────────────────────────────────
    Navigation module definitions
@@ -46,7 +50,7 @@ const MODULES = [
     label: "Job Offer Screener",
     labelHi: "नौकरी ऑफर जांच",
     icon: BriefcaseBusiness,
-    status: "coming" as const,
+    status: "live" as const,
     description: "Fake offer letter screener",
   },
   {
@@ -268,7 +272,18 @@ export default function WorkbenchShell() {
           {activeModule === "qr" && (
             <QRScanner lang={lang} onAuditComplete={recordAudit} />
           )}
-          {activeModule !== "upi" && activeModule !== "qr" && (
+          {activeModule === "job" && (
+            <JobScreener lang={lang} onAuditComplete={recordAudit} />
+          )}
+          {/* Saniya: Stage 4 — Video Deepfake Inspector Hook */}
+          {/* {activeModule === "deepfake" && (
+            <DeepfakeInspector lang={lang} onAuditComplete={recordAudit} />
+          )} */}
+          {/* Saniya: Stage 5 — Document & Bill Forensics Hook */}
+          {/* {activeModule === "document" && (
+            <DocumentInspector lang={lang} onAuditComplete={recordAudit} />
+          )} */}
+          {activeModule !== "upi" && activeModule !== "qr" && activeModule !== "job" && (
             <ComingSoon module={currentModule} lang={lang} />
           )}
         </main>
