@@ -1,0 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-trust: #059669;
+    --color-warning: #D97706;
+    --color-fraud: #DC2626;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Crisp 1px borders everywhere */
+  * {
+    border-color: #E2E8F0;
+  }
+
+  /* Custom scrollbar — thin, tasteful */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 9999px; }
+  ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+
+  .dark ::-webkit-scrollbar-thumb { background: #374151; }
+  .dark ::-webkit-scrollbar-thumb:hover { background: #4B5563; }
+}
+
+@layer components {
+  /* Workbench card */
+  .sk-card {
+    @apply bg-card rounded-xl border border-border shadow-card;
+  }
+
+  /* Mono badge for UTR/hashes */
+  .sk-mono {
+    @apply font-mono text-sm tracking-wide;
+  }
+
+  /* Status badge */
+  .sk-badge-trust  { @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-trust-bg text-trust; }
+  .sk-badge-warn   { @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-warning-bg text-warning; }
+  .sk-badge-fraud  { @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-fraud-bg text-fraud; }
+
+  /* Primary action button */
+  .sk-btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-ink text-white text-sm font-semibold
+           hover:bg-ink/90 active:scale-[0.98] transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+
+  /* Secondary/ghost button */
+  .sk-btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-border text-ink text-sm font-medium
+           hover:bg-surface active:scale-[0.98] transition-all duration-150;
+  }
+
+  /* Sidebar nav item */
+  .sk-nav-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-ink-muted
+           hover:bg-surface hover:text-ink transition-colors duration-150 cursor-pointer;
+  }
+  .sk-nav-item.active {
+    @apply bg-ink text-white hover:bg-ink/90;
+  }
+
+  /* Dark mode overrides */
+  .dark .sk-card          { @apply bg-dark-card border-dark-border; }
+  .dark .sk-nav-item      { @apply text-slate-400 hover:bg-dark-border hover:text-white; }
+  .dark .sk-nav-item.active { @apply bg-white/10 text-white; }
+  .dark .sk-btn-primary   { @apply bg-white text-dark-surface hover:bg-white/90; }
+  .dark .sk-btn-ghost     { @apply border-dark-border text-slate-200 hover:bg-dark-border; }
+}
