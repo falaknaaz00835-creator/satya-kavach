@@ -21,9 +21,8 @@ import {
 import UPIInspector from "@/components/modules/UPIInspector";
 import QRScanner from "@/components/modules/QRScanner";
 import JobScreener from "@/components/modules/JobScreener";
-// Saniya: Import Module 4 & Module 5 here when ready:
-// import DeepfakeInspector from "@/components/modules/DeepfakeInspector";
-// import DocumentInspector from "@/components/modules/DocumentInspector";
+import DeepfakeInspector from "@/components/modules/DeepfakeInspector";
+import DocumentInspector from "@/components/modules/DocumentInspector";
 
 /* ─────────────────────────────────────────
    Navigation module definitions
@@ -58,7 +57,7 @@ const MODULES = [
     label: "Deepfake Inspector",
     labelHi: "डीपफेक जांच",
     icon: Video,
-    status: "coming" as const,
+    status: "live" as const,
     description: "Video & face-swap forensics",
   },
   {
@@ -66,7 +65,7 @@ const MODULES = [
     label: "Document Forensics",
     labelHi: "दस्तावेज़ जांच",
     icon: FileSearch,
-    status: "coming" as const,
+    status: "live" as const,
     description: "Tampered bill & document inspector",
   },
 ];
@@ -275,15 +274,13 @@ export default function WorkbenchShell() {
           {activeModule === "job" && (
             <JobScreener lang={lang} onAuditComplete={recordAudit} />
           )}
-          {/* Saniya: Stage 4 — Video Deepfake Inspector Hook */}
-          {/* {activeModule === "deepfake" && (
+          {activeModule === "deepfake" && (
             <DeepfakeInspector lang={lang} onAuditComplete={recordAudit} />
-          )} */}
-          {/* Saniya: Stage 5 — Document & Bill Forensics Hook */}
-          {/* {activeModule === "document" && (
+          )}
+          {activeModule === "document" && (
             <DocumentInspector lang={lang} onAuditComplete={recordAudit} />
-          )} */}
-          {activeModule !== "upi" && activeModule !== "qr" && activeModule !== "job" && (
+          )}
+          {activeModule !== "upi" && activeModule !== "qr" && activeModule !== "job" && activeModule !== "deepfake" && activeModule !== "document" && (
             <ComingSoon module={currentModule} lang={lang} />
           )}
         </main>
