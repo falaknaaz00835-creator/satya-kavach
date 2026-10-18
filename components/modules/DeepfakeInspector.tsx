@@ -100,18 +100,47 @@ export default function DeepfakeInspector({ lang, onAuditComplete }: DeepfakeIns
         </div>
       </div>
 
-      {/* Manual Upload Area */}
+      {/* Real Manual Upload Area */}
       <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-10 flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-800/50">
         <svg className="w-8 h-8 text-slate-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
         </svg>
-        <button 
-          onClick={() => handleScan()}
-          disabled={isAnalyzing}
-          className="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2 rounded-md font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+        <input 
+          type="file" 
+          accept="video/mp4,video/quicktime" 
+          className="hidden" 
+          id="video-upload"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            
+            setIsAnalyzing(true);
+            try {
+              const formData = new FormData();
+              formData.append('file', file);
+
+              const response = await fetch('http://localhost:8000/api/v1/deepfake/scan', {
+                method: 'POST',
+                body: formData,
+              });
+
+              if (!response.ok) throw new Error('API Error');
+              const liveReport = await response.json();
+              setResults(liveReport);
+              onAuditComplete(liveReport);
+            } catch (error) {
+              console.error(error);
+            } finally {
+              setIsAnalyzing(false);
+            }
+          }}
+        />
+        <label 
+          htmlFor="video-upload"
+          className="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2 rounded-md font-medium transition-colors flex items-center gap-2 cursor-pointer"
         >
-          {isAnalyzing ? 'Analyzing Frames...' : 'Upload custom video (.mp4)'}
-        </button>
+          {isAnalyzing ? 'Analyzing Real Video...' : 'Upload real video (.mp4)'}
+        </label>
       </div>
 
       {/* Results Panel */}
