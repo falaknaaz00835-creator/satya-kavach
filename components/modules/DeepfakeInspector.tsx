@@ -17,27 +17,49 @@ export default function DeepfakeInspector({ lang, onAuditComplete }: DeepfakeIns
     { id: 2, title: 'WhatsApp Face-Swap Scam', type: 'Fraudulent', risk: 'HIGH' },
   ];
 
-  const handleScan = (demoId?: number) => {
+  const handleScan = async (demoId?: number) => {
     setIsAnalyzing(true);
     if (demoId) setActiveDemo(demoId);
     
-    setTimeout(() => {
-      const isFraud = demoId === 2;
-      const mockReport = {
-        id: `DF-${Math.floor(Math.random() * 10000)}`,
-        module: 'Deepfake Inspector',
-        riskLevel: isFraud ? 'HIGH' : 'LOW',
+    try {
+      const formData = new FormData();
+      
+      // If user clicks Demo 2 (Fraudulent), we label the file 'fraud-video.mp4' 
+      // so the FastAPI backend knows to flag it.
+      if (demoId === 2) {
+        formData.append('file', new Blob(['dummy content'], { type: 'video/mp4' }), 'fraud-video.mp4');
+      } else {
+        formData.append('file', new Blob(['dummy content'], { type: 'video/mp4' }), 'safe-video.mp4');
+      }
+
+      const response = await fetch('http://localhost:8000/api/v1/deepfake/scan', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('API Error');
+      
+      const liveReport = await response.json();
+      setResults(liveReport);
+      onAuditComplete(liveReport);
+
+    } catch (error) {
+      console.error("Forensic scan failed:", error);
+      const fallbackReport = {
+        id: `DF-ERR`,
+        riskLevel: 'HIGH',
         metrics: {
-          landmarkJitter: isFraud ? '87% (Anomalous)' : '12% (Normal)',
-          blinkRate: isFraud ? '4 blinks/min (Synthetic)' : '18 blinks/min (Natural)',
-          lipSyncDelta: isFraud ? '+140ms lag detected' : 'Synchronized',
+          landmarkJitter: 'N/A',
+          blinkRate: 'N/A',
+          lipSyncDelta: 'Network Error: Could not reach API',
         },
         timestamp: new Date().toISOString(),
       };
-      setResults(mockReport);
+      setResults(fallbackReport);
+      onAuditComplete(fallbackReport);
+    } finally {
       setIsAnalyzing(false);
-      onAuditComplete(mockReport);
-    }, 1500);
+    }
   };
 
   return (
