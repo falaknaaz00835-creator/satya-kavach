@@ -176,8 +176,7 @@ const LANGUAGE_PATTERNS: Array<{ pattern: RegExp; label: string; severity: "high
    Salary Anomaly Detector
 ───────────────────────────────────────── */
 function detectSalaryAnomaly(text: string): RedFlag | null {
-  // Extract all salary figures
-  const salaryMatches = text.matchAll(/(?:ctc|salary|stipend|package|lpa|per\s*annum|per\s*month)[:\s]*(?:₹|rs\.?|inr)?\s*([\d,]+(?:\.\d+)?)\s*(lpa|lakh|l\.?p\.?a|per\s*annum|per\s*month|pm|\/month|\/year)?/gi);
+  const salaryMatches = Array.from(text.matchAll(/(?:ctc|salary|stipend|package|lpa|per\s*annum|per\s*month)[:\s]*(?:₹|rs\.?|inr)?\s*([\d,]+(?:\.\d+)?)\s*(lpa|lakh|l\.?p\.?a|per\s*annum|per\s*month|pm|\/month|\/year)?/gi));
 
   for (const match of salaryMatches) {
     const raw = match[1].replace(/,/g, "");

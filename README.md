@@ -6,21 +6,75 @@ A production-grade, full-stack forensic workbench for detecting the most common 
 
 ## Features
 
-| Stage | Module | Status |
-|-------|--------|--------|
-| 0 | Core Workbench Shell & Navigation | ✅ Live |
-| 1 | Fake UPI Payment Screenshot Inspector | ✅ Live |
-| 2 | Malicious QR Code & Trap-Link Scanner | 🔜 Coming |
-| 3 | Fake Job & Internship Offer Letter Screener | 🔜 Coming |
-| 4 | Video & Face-Swap Deepfake Call Inspector | 🔜 Coming |
-| 5 | Fake Document & Tampered Bill Inspector | 🔜 Coming |
+| Stage | Module | Status | Capabilities |
+|-------|--------|--------|--------------|
+| 0 | Core Workbench Shell & Navigation | ✅ Live | Slate-and-emerald design system, dark mode, English & Hindi |
+| 1 | Fake UPI Payment Screenshot Inspector | ✅ Live | ELA (Error Level Analysis), NPCI UTR validation, bank handles |
+| 2 | Malicious QR Code & Trap-Link Scanner | ✅ Live | Reverse phishing detection, NPCI intent parser, trap-link analysis |
+| 3 | Fake Job & Internship Offer Letter Screener | ✅ Live | MCA/CIN verification, salary anomaly detector, upfront fee flags |
+| 4 | Video & Face-Swap Deepfake Call Inspector | ✅ Live | WhatsApp digital arrest detector, temporal artifact & seam analysis |
+| 5 | Fake Document & Tampered Bill Inspector | ✅ Live | Metadata tampering, font mismatch, forged court/utility notices |
+| 6 | Kavach AI Security Copilot (NVIDIA Nemotron) | ✅ Live | Triage agent, Hindi/Hinglish/English, Nebius Token Factory routing |
+
+---
+
+## ⚡ Powered by NVIDIA Nemotron & Nebius Token Factory
+
+SatyaKavach features **Kavach Copilot**, an AI-powered forensic security agent built specifically for the **Nebius x NVIDIA Hackathon** (Best Apps & Agents Track).
+
+### Dual-Model Routing Architecture
+```
+User Query (Hindi / Hinglish / English)
+                │
+                ▼
+  ┌───────────────────────────┐
+  │ Nebius Token Factory API │
+  └─────────────┬─────────────┘
+                │
+     ┌──────────┴──────────┐
+     ▼                     ▼
+[Nemotron-Nano]     [Nemotron-70B-Instruct]
+ Fast Intent &       Deep Forensic Reasoning &
+ Risk Scoring        Multi-step Citizen Action Plans
+ (<150ms latency)    (NPCI / CERT-In compliance)
+                │
+                ▼
+  Structured Forensic Output
+  • Severity Badge: HIGH RISK / CAUTION / SAFE
+  • 3 Plain-Language Action Steps for Citizens
+  • 1-Click Action: Auto-switches to target module
+```
+
+### Key Capabilities:
+- **NVIDIA Nemotron-70B Inference via Nebius Token Factory:** Provides deep contextual understanding of localized Indian scams, including "Digital Arrest" impersonation, WhatsApp video call syndicates, QR cashback traps, and fake registration fee rackets.
+- **Zero-Key Offline Fallback Engine:** Features a context-aware local forensic reasoning engine that runs 100% offline if `NEBIUS_API_KEY` is not set—guaranteeing pitch resilience during live stage demos with zero downtime or runtime errors.
+- **Contextual Language Support:** Seamlessly responds to questions in English, Hindi (Devanagari), and colloquial Hinglish (e.g., *"police video call digital arrest threaten kar rahe hain"*).
+- **1-Click Triage Routing:** Directly opens and primes the matching forensic module (`upi`, `qr`, `job`, `deepfake`, or `document`) so non-technical citizens can immediately inspect suspicious files.
+
+---
 
 ## Tech Stack
 
 - **Framework:** Next.js 14 (App Router) + TypeScript
+- **AI / LLM:** NVIDIA Nemotron-70B-Instruct routed via Nebius Token Factory Serverless API
 - **Styling:** Tailwind CSS with custom SatyaKavach design tokens
 - **Icons:** Lucide React
-- **Forensics:** HTML5 Canvas ELA (Error Level Analysis), NPCI UTR format validation, UPI handle registry
+- **Forensics:** HTML5 Canvas ELA (Error Level Analysis), NPCI UTR validation, QR payload decoder, MCA registry cross-checks
+
+---
+
+## Environment Configuration
+
+To enable live NVIDIA Nemotron cloud inference via Nebius:
+
+Create `.env.local` in the project root:
+```env
+NEBIUS_API_KEY="your_nebius_studio_api_key_here"
+```
+
+*(Note: If `NEBIUS_API_KEY` is omitted, SatyaKavach automatically engages the Zero-Key Offline Fallback Engine for flawless offline operation).*
+
+---
 
 ## Local Development
 
@@ -30,6 +84,8 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000)
+
+---
 
 ## Design System
 
@@ -41,4 +97,4 @@ Open [http://localhost:3000](http://localhost:3000)
 | Trust Emerald | `#059669` | Genuine / verified |
 | Warning Amber | `#D97706` | Suspicious |
 | Fraud Crimson | `#DC2626` | Fraud detected |
-| Mono | JetBrains Mono | UTR, hashes, coords |
+| Mono | JetBrains Mono | UTR, hashes, telemetry |

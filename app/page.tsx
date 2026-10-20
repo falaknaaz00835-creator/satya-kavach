@@ -23,6 +23,7 @@ import QRScanner from "@/components/modules/QRScanner";
 import JobScreener from "@/components/modules/JobScreener";
 import DeepfakeInspector from "@/components/modules/DeepfakeInspector";
 import DocumentInspector from "@/components/modules/DocumentInspector";
+import KavachCopilot from "@/components/KavachCopilot";
 
 /* ─────────────────────────────────────────
    Navigation module definitions
@@ -285,6 +286,13 @@ export default function WorkbenchShell() {
           )}
         </main>
       </div>
+
+      {/* ── Kavach AI Security Copilot Floating Agent ── */}
+      <KavachCopilot
+        lang={lang}
+        activeTab={activeModule}
+        onSelectTab={setActiveModule}
+      />
 
       {/* ── Audit Log Drawer ── */}
       {logOpen && (
