@@ -21,6 +21,7 @@ import {
   Search,
   ArrowRight,
 } from "lucide-react";
+import { parseUPIIntent, computeSHA256 } from "@/lib/real-forensics";
 
 /* ─────────────────────────────────────────
    Types
@@ -524,17 +525,58 @@ export default function QRScanner({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  /* ── Scan a decoded/classified QR or URL ── */
-  const runScan = useCallback((decoded: DecodedQR) => {
-    setMode("loading");
-    setQrDecodeError(null);
-    setTimeout(() => {
-      const res = analyseContent(decoded);
-      setResult(res);
-      setMode("done");
-      onAuditComplete();
-    }, 900);
-  }, [onAuditComplete]);
+  /* ── Real-time Scan of a decoded/classified QR or URL ── */
+  const runScan = useCallback(
+    async (decoded: DecodedQR) => {
+      setMode("loading");
+      setQrDecodeError(null);
+
+      try {
+        const localRes = analyseContent(decoded);
+
+        // Call backend API for unified verification & Nemotron insights
+        const response = await fetch("/api/forensics/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "qr",
+            payload: { qrText: decoded.rawText },
+            lang,
+          }),
+        });
+
+        if (response.ok) {
+          const apiData = await response.json();
+          if (apiData.verdict === "fraud" && localRes.threatLevel !== "dangerous") {
+            localRes.threatLevel = "dangerous";
+            localRes.confidence = Math.max(localRes.confidence, apiData.confidence);
+          }
+          if (apiData.evidence && apiData.evidence.length > 0) {
+            apiData.evidence.forEach((ev: string) => {
+              if (!localRes.flags.some((f) => f.label.includes(ev) || f.detail.includes(ev))) {
+                localRes.flags.unshift({
+                  label: "Backend Forensic Verification",
+                  detail: ev,
+                  severity: apiData.verdict === "fraud" ? "high" : "medium",
+                });
+              }
+            });
+          }
+        }
+
+        setResult(localRes);
+        setMode("done");
+        onAuditComplete();
+      } catch (err) {
+        console.error("QR analysis error:", err);
+        const res = analyseContent(decoded);
+        setResult(res);
+        setMode("done");
+        onAuditComplete();
+      }
+    },
+    [lang, onAuditComplete]
+  );
 
   /* ── Load sample ── */
   const loadSample = useCallback((sample: SampleCase) => {

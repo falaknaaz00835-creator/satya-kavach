@@ -606,18 +606,61 @@ export default function JobScreener({
   const [charCount, setCharCount] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const runScreen = useCallback((text: string, sampleId?: string) => {
-    if (!text.trim()) return;
-    setMode("loading");
-    setShowGreenSignals(false);
-    setTimeout(() => {
-      const res = screenOfferLetter(text);
-      setResult(res);
-      setMode("done");
-      if (sampleId) setActiveSample(sampleId);
-      onAuditComplete();
-    }, 1000);
-  }, [onAuditComplete]);
+  const runScreen = useCallback(
+    async (text: string, sampleId?: string) => {
+      if (!text.trim()) return;
+      setMode("loading");
+      setShowGreenSignals(false);
+
+      try {
+        const localRes = screenOfferLetter(text);
+
+        // Query backend forensics analyze endpoint
+        const response = await fetch("/api/forensics/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "job",
+            payload: { jobText: text },
+            lang,
+          }),
+        });
+
+        if (response.ok) {
+          const apiData = await response.json();
+          if (apiData.verdict === "fraud" && localRes.riskLevel !== "fraud") {
+            localRes.riskLevel = "fraud";
+            localRes.riskScore = Math.max(localRes.riskScore, apiData.riskScore);
+          }
+          if (apiData.evidence && apiData.evidence.length > 0) {
+            apiData.evidence.forEach((ev: string) => {
+              if (!localRes.redFlags.some((rf) => rf.label.includes(ev) || rf.detail.includes(ev))) {
+                localRes.redFlags.push({
+                  category: "fee",
+                  label: "Forensic Screener Insight",
+                  detail: ev,
+                  severity: apiData.verdict === "fraud" ? "high" : "medium",
+                });
+              }
+            });
+          }
+        }
+
+        setResult(localRes);
+        setMode("done");
+        if (sampleId) setActiveSample(sampleId);
+        onAuditComplete();
+      } catch (err) {
+        console.error("Job screening error:", err);
+        const res = screenOfferLetter(text);
+        setResult(res);
+        setMode("done");
+        if (sampleId) setActiveSample(sampleId);
+        onAuditComplete();
+      }
+    },
+    [lang, onAuditComplete]
+  );
 
   const loadSample = useCallback((s: SampleCase) => {
     setInputText(s.content);
