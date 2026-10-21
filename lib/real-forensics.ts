@@ -373,7 +373,8 @@ export function scanJobText(text: string): JobScanResult {
   // 1. Fee Demands (High Severity)
   const feeRegexes = [
     { regex: /(?:security\s*deposit|refundable\s*security)[\s:₹rs]*([\d,]+)?/gi, label: "Security Deposit Demand", cat: "fee" as const },
-    { regex: /(?:laptop\s*(?:fee|charge|deposit|cost))[\s:₹rs]*([\d,]+)?/gi, label: "Laptop Hardware Fee", cat: "fee" as const },
+    { regex: /(?:laptop|hardware|asset)\s*(?:security\s*)?(?:fee|charge|deposit|cost)[\s:₹rs]*([\d,]+)?/gi, label: "Laptop Hardware Fee", cat: "fee" as const },
+    { regex: /(?:deposit|transfer|send|pay)\s*(?:₹|rs\.?|inr)?\s*([\d,]+)?\s*(?:for|as)?\s*(?:laptop|security|training|registration|kit|gate pass)/gi, label: "Upfront Cash/Deposit Demand", cat: "fee" as const },
     { regex: /(?:training\s*(?:fee|charge|cost))[\s:₹rs]*([\d,]+)?/gi, label: "Pre-joining Training Charge", cat: "fee" as const },
     { regex: /(?:registration\s*(?:fee|amount|charge))[\s:₹rs]*([\d,]+)?/gi, label: "Application / Registration Fee", cat: "fee" as const },
     { regex: /(?:uniform|starter\s*kit)\s*(?:fee|charge|deposit)/gi, label: "Onboarding Kit / Uniform Fee", cat: "fee" as const },
@@ -640,3 +641,16 @@ export function analyzeVideoMetrics(
     ],
   };
 }
+
+/* ─────────────────────────────────────────────────────────────
+   9. Google Gemini Multi-Modal Vision & Reasoning Re-exports
+───────────────────────────────────────────────────────────── */
+export {
+  runGeminiForensicAnalysis,
+  type GeminiForensicInput,
+  type GeminiForensicResult,
+} from "./gemini-forensics";
+
+
+
+

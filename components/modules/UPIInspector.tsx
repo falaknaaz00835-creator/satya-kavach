@@ -17,7 +17,13 @@ import {
   ChevronDown,
   ChevronUp,
   Zap,
+  ShieldAlert,
+  FileText,
+  Copy,
+  ExternalLink,
+  X,
 } from "lucide-react";
+import RealTimeGroundingCard from "@/components/RealTimeGroundingCard";
 import { computeSHA256, validateUTR as validateUTRAlgorithmic } from "@/lib/real-forensics";
 
 /* ─────────────────────────────────────────
@@ -374,6 +380,10 @@ export default function UPIInspector({
   const [showELA, setShowELA] = useState(false);
   const [activeSample, setActiveSample] = useState<string | null>(null);
   const [showFullEvidence, setShowFullEvidence] = useState(false);
+  const [cyberCellData, setCyberCellData] = useState<any>(null);
+  const [showCyberModal, setShowCyberModal] = useState(false);
+  const [copiedPoliceText, setCopiedPoliceText] = useState(false);
+  const [groundingData, setGroundingData] = useState<any>(null);
   const [upiInput, setUpiInput] = useState("");
   const [utrInput, setUtrInput] = useState("");
   const [dragActive, setDragActive] = useState(false);
@@ -404,8 +414,28 @@ export default function UPIInspector({
     setMode("done");
     setShowELA(false);
     setShowFullEvidence(false);
+    setGroundingData(null);
     onAuditComplete();
-  }, [onAuditComplete]);
+
+    // Query backend to retrieve real-time grounded research
+    fetch("/api/forensics/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "upi",
+        payload: {
+          utr: sample.mockResult.utrValue,
+          upiId: sample.mockResult.upiHandle?.handle || "merchant@okaxis",
+        },
+        lang,
+      }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data) setGroundingData(data);
+      })
+      .catch(() => {});
+  }, [lang, onAuditComplete]);
 
   /* ── Handle real file upload & backend forensics ── */
   const handleFile = useCallback(
@@ -415,12 +445,20 @@ export default function UPIInspector({
       setImageURL(url);
       setActiveSample(null);
       setShowELA(false);
+      setGroundingData(null);
       setMode("loading");
 
       try {
         // Step 1: Compute real cryptographic SHA-256 hash of image file
         const arrayBuffer = await file.arrayBuffer();
         const sha256 = await computeSHA256(arrayBuffer);
+
+        // Convert to base64 for Google Gemini multi-modal inspection
+        const fileBase64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(file.size > 5 * 1024 * 1024 ? file.slice(0, 5 * 1024 * 1024) : file);
+        });
 
         // Step 2: Algorithmic UTR and handle checks
         const utrResult = validateUTRAlgorithmic(utrInput || "");
@@ -430,7 +468,7 @@ export default function UPIInspector({
           fontAnomalies.push(...utrResult.anomalyNotes);
         }
 
-        // Step 3: Call backend unified forensics endpoint
+        // Step 3: Call backend unified forensics endpoint with Gemini vision
         const response = await fetch("/api/forensics/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -441,6 +479,7 @@ export default function UPIInspector({
               upiId: upiInput,
               filename: file.name,
               fileSize: file.size,
+              fileBase64,
             },
             lang,
           }),
@@ -449,6 +488,7 @@ export default function UPIInspector({
         let backendData: any = null;
         if (response.ok) {
           backendData = await response.json();
+          setGroundingData(backendData);
         }
 
         const fraud = !utrResult.isValid || (handle && !handle.trusted) || backendData?.verdict === "fraud";
@@ -508,8 +548,45 @@ export default function UPIInspector({
     setUtrInput("");
   };
 
-  const downloadReceipt = () => {
+  const downloadReceipt = async () => {
     if (!result) return;
+    try {
+      const res = await fetch("/api/forensics/export-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          analysis: {
+            module: "upi",
+            verdict: result.verdict,
+            riskScore: result.verdict === "fraud" ? 92 : result.verdict === "suspicious" ? 65 : 15,
+            confidence: result.confidence,
+            evidence: result.evidencePoints,
+            sha256: result.sha256,
+            metrics: {
+              utrValue: result.utrValue,
+              utrValid: result.utrValid,
+              upiHandle: result.upiHandle,
+              elaScore: result.elaScore,
+            },
+          },
+        }),
+      });
+
+      if (res.ok) {
+        const dossier = await res.json();
+        const blob = new Blob([JSON.stringify(dossier, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${dossier.caseReference || "evidence"}-audit.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        return;
+      }
+    } catch (err) {
+      console.warn("Falling back to plain text receipt:", err);
+    }
+
     const content = [
       "=== SATYA KAVACH — FORENSIC AUDIT RECEIPT ===",
       `Timestamp: ${result.timestamp}`,
@@ -531,6 +608,37 @@ export default function UPIInspector({
     a.download = `satya-kavach-upi-audit-${Date.now()}.txt`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleCyberCellReport = async () => {
+    if (!result) return;
+    try {
+      const res = await fetch("/api/forensics/report-cybercell", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          analysis: {
+            module: "upi",
+            verdict: result.verdict,
+            riskScore: result.verdict === "fraud" ? 92 : result.verdict === "suspicious" ? 65 : 15,
+            evidence: result.evidencePoints,
+            sha256: result.sha256,
+          },
+          incident: {
+            suspectUpi: result.upiHandle?.handle || upiInput || undefined,
+            incidentDescription: `Victim encountered suspicious UPI payment screenshot with invalid NPCI routing or altered layout artifacts.`,
+          },
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setCyberCellData(data);
+        setShowCyberModal(true);
+      }
+    } catch (err) {
+      console.error("Failed to generate cyber-cell complaint:", err);
+    }
   };
 
   return (
@@ -804,6 +912,18 @@ export default function UPIInspector({
                 </div>
               </div>
 
+              {/* Real-Time Gemini AI Grounding & Web Intelligence */}
+              {groundingData && (
+                <RealTimeGroundingCard
+                  entityProfile={groundingData.entityProfile}
+                  liveWebStatus={groundingData.liveWebStatus}
+                  riskRationale={groundingData.riskRationale}
+                  actionSteps={groundingData.actionSteps}
+                  provider={groundingData.telemetry?.provider}
+                  lang={lang}
+                />
+              )}
+
               {/* ELA section */}
               <div className="sk-card p-4 space-y-3">
                 <div className="flex items-center justify-between">
@@ -895,18 +1015,116 @@ export default function UPIInspector({
                 )}
               </div>
 
-              {/* Download receipt */}
-              <button
-                onClick={downloadReceipt}
-                className="sk-btn-primary w-full"
-              >
-                <Download className="w-4 h-4" />
-                {lang === "en" ? "Download Audit Receipt (.txt)" : "ऑडिट रसीद डाउनलोड करें"}
-              </button>
+              {/* Action Buttons: Cryptographic Export & Cyber-Cell Dispatch */}
+              <div className="space-y-2">
+                <button
+                  onClick={downloadReceipt}
+                  className="sk-btn-primary w-full flex items-center justify-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  {lang === "en"
+                    ? "Export Cryptographic Audit Dossier (JSON)"
+                    : "डिजिटल साक्ष्य दस्तावेज़ डाउनलोड करें (JSON)"}
+                </button>
+
+                {(result.verdict === "fraud" || result.verdict === "suspicious") && (
+                  <button
+                    onClick={handleCyberCellReport}
+                    className="w-full py-2.5 px-4 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium text-xs flex items-center justify-center gap-2 transition-colors shadow-sm"
+                  >
+                    <ShieldAlert className="w-4 h-4 text-white" />
+                    {lang === "en"
+                      ? "Dispatch 1930 / Cyber-Cell Complaint"
+                      : "1930 / साइबर सेल शिकायत तैयार करें"}
+                  </button>
+                )}
+              </div>
             </>
           )}
         </div>
       </div>
+
+      {/* ── Cyber Cell Modal ── */}
+      {showCyberModal && cyberCellData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/50 backdrop-blur-xs">
+          <div className="bg-card dark:bg-dark-card border border-border dark:border-dark-border rounded-xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-border dark:border-dark-border pb-3">
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="w-5 h-5 text-red-600" />
+                <h3 className="font-bold text-sm text-ink dark:text-white">
+                  National Cyber Crime Reporting Portal (1930 / CFCFRMS)
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowCyberModal(false)}
+                className="text-ink-muted hover:text-ink dark:hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-xs text-amber-900 dark:text-amber-200">
+              <p className="font-semibold flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5 text-amber-600" />
+                Golden Hour Advisory:
+              </p>
+              <ul className="list-disc list-inside mt-1 space-y-0.5 text-[11px]">
+                {cyberCellData.goldenHourAdvisory?.map((adv: string, i: number) => (
+                  <li key={i}>{adv}</li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-semibold text-ink-muted dark:text-slate-400">
+                  Official Police Complaint Draft (Ready to Submit)
+                </label>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(cyberCellData.formalPoliceNarrative);
+                    setCopiedPoliceText(true);
+                    setTimeout(() => setCopiedPoliceText(false), 2000);
+                  }}
+                  className="flex items-center gap-1 text-xs text-trust hover:underline"
+                >
+                  <Copy className="w-3 h-3" />
+                  {copiedPoliceText ? "Copied!" : "Copy Full Text"}
+                </button>
+              </div>
+              <textarea
+                readOnly
+                value={cyberCellData.formalPoliceNarrative}
+                rows={10}
+                className="w-full text-xs font-mono p-3 rounded-lg border border-border dark:border-dark-border bg-surface dark:bg-dark-surface text-ink dark:text-white resize-none"
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <span className="text-[11px] font-mono text-ink-faint dark:text-slate-500">
+                Ref Code: {cyberCellData.acknowledgementCode}
+              </span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowCyberModal(false)}
+                  className="sk-btn-ghost text-xs"
+                >
+                  Close
+                </button>
+                <a
+                  href="https://cybercrime.gov.in"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="sk-btn-primary text-xs flex items-center gap-1.5"
+                >
+                  Open cybercrime.gov.in
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

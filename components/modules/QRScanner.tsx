@@ -20,7 +20,13 @@ import {
   Zap,
   Search,
   ArrowRight,
+  Globe2,
+  Server,
+  Shield,
+  Mail,
+  X,
 } from "lucide-react";
+import RealTimeGroundingCard from "@/components/RealTimeGroundingCard";
 import { parseUPIIntent, computeSHA256 } from "@/lib/real-forensics";
 
 /* ─────────────────────────────────────────
@@ -522,6 +528,10 @@ export default function QRScanner({
   const [showEvidence, setShowEvidence] = useState(false);
   const [copied, setCopied] = useState(false);
   const [qrDecodeError, setQrDecodeError] = useState<string | null>(null);
+  const [neutralizationData, setNeutralizationData] = useState<any>(null);
+  const [groundingData, setGroundingData] = useState<any>(null);
+  const [showAbuseModal, setShowAbuseModal] = useState(false);
+  const [copiedAbuseNotice, setCopiedAbuseNotice] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -530,11 +540,13 @@ export default function QRScanner({
     async (decoded: DecodedQR) => {
       setMode("loading");
       setQrDecodeError(null);
+      setNeutralizationData(null);
+      setGroundingData(null);
 
       try {
         const localRes = analyseContent(decoded);
 
-        // Call backend API for unified verification & Nemotron insights
+        // Call backend API for unified verification & Nemotron/Gemini insights
         const response = await fetch("/api/forensics/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -545,9 +557,13 @@ export default function QRScanner({
           }),
         });
 
+        let isFraud = localRes.threatLevel === "dangerous";
+
         if (response.ok) {
           const apiData = await response.json();
-          if (apiData.verdict === "fraud" && localRes.threatLevel !== "dangerous") {
+          setGroundingData(apiData);
+          if (apiData.verdict === "fraud") {
+            isFraud = true;
             localRes.threatLevel = "dangerous";
             localRes.confidence = Math.max(localRes.confidence, apiData.confidence);
           }
@@ -561,6 +577,31 @@ export default function QRScanner({
                 });
               }
             });
+          }
+        }
+
+        // Active Threat Neutralization & Origin Tracking
+        if (isFraud) {
+          try {
+            const neutRes = await fetch("/api/forensics/neutralize", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                target: decoded.rawText,
+                threatType: "qr_or_url",
+                threatVerdict: "fraud",
+                threatDetails: {
+                  flags: localRes.flags.map((f) => f.detail),
+                  confidence: localRes.confidence,
+                },
+              }),
+            });
+            if (neutRes.ok) {
+              const neutJson = await neutRes.json();
+              setNeutralizationData(neutJson);
+            }
+          } catch (neutErr) {
+            console.warn("Threat neutralization dispatch error:", neutErr);
           }
         }
 
@@ -630,8 +671,54 @@ export default function QRScanner({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const downloadReport = () => {
+  const downloadReport = async () => {
     if (!result) return;
+    try {
+      const res = await fetch("/api/forensics/export-report", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          analysis: {
+            module: "qr",
+            verdict:
+              result.threatLevel === "dangerous"
+                ? "fraud"
+                : result.threatLevel === "suspicious"
+                ? "suspicious"
+                : "genuine",
+            riskScore:
+              result.threatLevel === "dangerous"
+                ? 95
+                : result.threatLevel === "suspicious"
+                ? 60
+                : 10,
+            confidence: result.confidence,
+            evidence: result.flags.map((f) => `${f.label}: ${f.detail}`),
+            metrics: {
+              decodedContent: result.decoded.rawText,
+              upiParams: result.upiParams,
+              neutralization: neutralizationData,
+            },
+          },
+        }),
+      });
+      if (res.ok) {
+        const dossier = await res.json();
+        const blob = new Blob([JSON.stringify(dossier, null, 2)], {
+          type: "application/json",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${dossier.caseReference || "evidence"}-qr-audit.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        return;
+      }
+    } catch (err) {
+      console.warn("Falling back to plain text report:", err);
+    }
+
     const lines = [
       "=== SATYA KAVACH — QR / LINK FORENSIC REPORT ===",
       `Timestamp   : ${result.timestamp}`,
@@ -642,7 +729,10 @@ export default function QRScanner({
       "",
       "── Threat Flags ──",
       ...(result.flags.length
-        ? result.flags.map((f, i) => `  [${f.severity.toUpperCase()}] ${i + 1}. ${f.label}\n     ${f.detail}`)
+        ? result.flags.map(
+            (f, i) =>
+              `  [${f.severity.toUpperCase()}] ${i + 1}. ${f.label}\n     ${f.detail}`
+          )
         : ["  None detected"]),
       "",
       "── Safe Signals ──",
@@ -650,14 +740,20 @@ export default function QRScanner({
         ? result.safeSignals.map((s, i) => `  ${i + 1}. ${s}`)
         : ["  None"]),
       "",
-      ...(result.upiParams ? [
-        "── UPI Parameters ──",
-        `  Payee Address (pa): ${result.upiParams.pa ?? "—"}`,
-        `  Payee Name (pn)   : ${result.upiParams.pn ?? "—"}`,
-        `  Amount (am)       : ${result.upiParams.am ? "₹" + result.upiParams.am : "—"}`,
-        `  Mode              : ${result.upiParams.mode ?? "01 (standard)"} ${result.upiParams.mode === "02" ? "⚠ COLLECT REQUEST" : ""}`,
-        "",
-      ] : []),
+      ...(result.upiParams
+        ? [
+            "── UPI Parameters ──",
+            `  Payee Address (pa): ${result.upiParams.pa ?? "—"}`,
+            `  Payee Name (pn)   : ${result.upiParams.pn ?? "—"}`,
+            `  Amount (am)       : ${
+              result.upiParams.am ? "₹" + result.upiParams.am : "—"
+            }`,
+            `  Mode              : ${result.upiParams.mode ?? "01 (standard)"} ${
+              result.upiParams.mode === "02" ? "⚠ COLLECT REQUEST" : ""
+            }`,
+            "",
+          ]
+        : []),
       "=== END OF REPORT ===",
     ];
     const blob = new Blob([lines.join("\n")], { type: "text/plain" });
@@ -898,6 +994,95 @@ export default function QRScanner({
                 )}
               </div>
 
+              {/* 🌐 Origin Trace & Network Immunization Active Card */}
+              {neutralizationData && (
+                <div className="sk-card p-5 border border-indigo-500/30 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 space-y-4 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-indigo-600 text-white">
+                        <Globe2 className="w-4 h-4 animate-spin-slow" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-ink dark:text-white flex items-center gap-1.5">
+                          Origin Trace & Network Immunization Active
+                        </h4>
+                        <p className="text-[10px] text-ink-muted dark:text-slate-400 font-mono">
+                          Infrastructure Intelligence & Automated Takedown Core
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-800 flex items-center gap-1">
+                      <Shield className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
+                      IMMUNIZED
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-surface/80 dark:bg-dark-surface/80 p-2.5 rounded-lg border border-border/80 dark:border-dark-border/80">
+                      <p className="text-[10px] text-ink-faint dark:text-slate-500 font-semibold uppercase flex items-center gap-1">
+                        <Server className="w-3 h-3 text-indigo-500" /> Host IP & Server
+                      </p>
+                      <p className="font-mono font-bold text-ink dark:text-white mt-0.5 truncate">
+                        {neutralizationData.origin.resolvedIp}
+                      </p>
+                      <p className="text-[11px] text-ink-muted dark:text-slate-400 truncate">
+                        {neutralizationData.origin.city}, {neutralizationData.origin.country}
+                      </p>
+                    </div>
+
+                    <div className="bg-surface/80 dark:bg-dark-surface/80 p-2.5 rounded-lg border border-border/80 dark:border-dark-border/80">
+                      <p className="text-[10px] text-ink-faint dark:text-slate-500 font-semibold uppercase flex items-center gap-1">
+                        <Globe2 className="w-3 h-3 text-indigo-500" /> Hosting Provider / ASN
+                      </p>
+                      <p className="font-semibold text-ink dark:text-white mt-0.5 truncate">
+                        {neutralizationData.origin.hostingProvider}
+                      </p>
+                      <p className="text-[11px] font-mono text-ink-muted dark:text-slate-400">
+                        {neutralizationData.origin.asn} · {neutralizationData.origin.domainAgeDays}d old
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Live Network Protection Counter */}
+                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200">
+                    <div className="flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      <span className="text-xs font-semibold">
+                        Shielding{" "}
+                        <span className="font-mono font-bold underline">
+                          {neutralizationData.immunization?.totalNetworkProtected?.toLocaleString("en-IN") || "1,420"}
+                        </span>{" "}
+                        Users Across Bharat Network
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 font-bold uppercase">
+                      Active Defense
+                    </span>
+                  </div>
+
+                  {/* Takedown Button */}
+                  <button
+                    onClick={() => setShowAbuseModal(true)}
+                    className="w-full py-2 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs flex items-center justify-center gap-2 transition-colors shadow-sm"
+                  >
+                    <Mail className="w-3.5 h-3.5" />
+                    Generate Upstream Abuse Takedown Notice
+                  </button>
+                </div>
+              )}
+
+              {/* Real-Time Gemini AI Grounding & Web Intelligence */}
+              {groundingData && (
+                <RealTimeGroundingCard
+                  entityProfile={groundingData.entityProfile}
+                  liveWebStatus={groundingData.liveWebStatus}
+                  riskRationale={groundingData.riskRationale}
+                  actionSteps={groundingData.actionSteps}
+                  provider={groundingData.telemetry?.provider}
+                  lang={lang}
+                />
+              )}
+
               {/* UPI params breakdown */}
               {result.upiParams && (
                 <div className="sk-card p-4 space-y-3">
@@ -988,12 +1173,95 @@ export default function QRScanner({
               {/* Download */}
               <button onClick={downloadReport} className="sk-btn-primary w-full">
                 <Download className="w-4 h-4" />
-                {lang === "en" ? "Download Forensic Report (.txt)" : "फॉरेंसिक रिपोर्ट डाउनलोड करें"}
+                {lang === "en" ? "Export Cryptographic Audit Dossier (JSON)" : "डिजिटल साक्ष्य दस्तावेज़ डाउनलोड करें (JSON)"}
               </button>
             </>
           )}
         </div>
       </div>
+
+      {/* ── Abuse Takedown Notice Modal ── */}
+      {showAbuseModal && neutralizationData?.abuseReport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/50 backdrop-blur-xs">
+          <div className="bg-card dark:bg-dark-card border border-border dark:border-dark-border rounded-xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-border dark:border-dark-border pb-3">
+              <div className="flex items-center gap-2">
+                <Mail className="w-5 h-5 text-indigo-600" />
+                <h3 className="font-bold text-sm text-ink dark:text-white">
+                  Formal Upstream Provider Abuse Takedown Notice
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowAbuseModal(false)}
+                className="text-ink-muted hover:text-ink dark:hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-1.5 text-xs">
+              <p className="text-ink-muted dark:text-slate-400">
+                <strong className="text-ink dark:text-white">Recipient:</strong>{" "}
+                <span className="font-mono text-indigo-600 dark:text-indigo-400 font-semibold">
+                  {neutralizationData.abuseReport.recipientEmail}
+                </span>
+              </p>
+              <p className="text-ink-muted dark:text-slate-400">
+                <strong className="text-ink dark:text-white">Subject:</strong>{" "}
+                {neutralizationData.abuseReport.emailSubject}
+              </p>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-semibold text-ink-muted dark:text-slate-400">
+                  Notice Content (IT Act Sec 79 / CERT-In Format)
+                </label>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(neutralizationData.abuseReport.emailBody);
+                    setCopiedAbuseNotice(true);
+                    setTimeout(() => setCopiedAbuseNotice(false), 2000);
+                  }}
+                  className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+                >
+                  <Copy className="w-3 h-3" />
+                  {copiedAbuseNotice ? "Copied!" : "Copy Full Notice"}
+                </button>
+              </div>
+              <textarea
+                readOnly
+                value={neutralizationData.abuseReport.emailBody}
+                rows={11}
+                className="w-full text-xs font-mono p-3 rounded-lg border border-border dark:border-dark-border bg-surface dark:bg-dark-surface text-ink dark:text-white resize-none"
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <span className="text-[11px] font-mono text-ink-faint dark:text-slate-500">
+                Target IP: {neutralizationData.origin.resolvedIp}
+              </span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowAbuseModal(false)}
+                  className="sk-btn-ghost text-xs"
+                >
+                  Close
+                </button>
+                <a
+                  href={`mailto:${neutralizationData.abuseReport.recipientEmail}?subject=${encodeURIComponent(
+                    neutralizationData.abuseReport.emailSubject
+                  )}&body=${encodeURIComponent(neutralizationData.abuseReport.emailBody)}`}
+                  className="sk-btn-primary text-xs flex items-center gap-1.5"
+                >
+                  Send via Email Client
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

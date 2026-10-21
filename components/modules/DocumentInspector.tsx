@@ -14,6 +14,7 @@ import {
   XCircle,
   Calculator,
 } from 'lucide-react';
+import RealTimeGroundingCard from '@/components/RealTimeGroundingCard';
 
 interface DocumentInspectorProps {
   lang: 'en' | 'hi';
@@ -279,6 +280,18 @@ export default function DocumentInspector({ lang, onAuditComplete }: DocumentIns
               </div>
             )}
           </div>
+
+          {/* Real-Time Gemini AI Grounding & Web Intelligence */}
+          {(analysis.entityProfile || analysis.liveWebStatus) && (
+            <RealTimeGroundingCard
+              entityProfile={analysis.entityProfile}
+              liveWebStatus={analysis.liveWebStatus}
+              riskRationale={analysis.riskRationale}
+              actionSteps={analysis.actionSteps}
+              provider={analysis.telemetry?.provider}
+              lang={lang}
+            />
+          )}
 
           {/* Evidence findings */}
           <div>

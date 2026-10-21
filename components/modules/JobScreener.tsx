@@ -23,6 +23,7 @@ import {
   ShieldCheck,
   Info,
 } from "lucide-react";
+import RealTimeGroundingCard from "@/components/RealTimeGroundingCard";
 
 /* ─────────────────────────────────────────
    Types
@@ -604,6 +605,7 @@ export default function JobScreener({
   const [showGreenSignals, setShowGreenSignals] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [charCount, setCharCount] = useState(0);
+  const [groundingData, setGroundingData] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const runScreen = useCallback(
@@ -611,6 +613,7 @@ export default function JobScreener({
       if (!text.trim()) return;
       setMode("loading");
       setShowGreenSignals(false);
+      setGroundingData(null);
 
       try {
         const localRes = screenOfferLetter(text);
@@ -628,6 +631,7 @@ export default function JobScreener({
 
         if (response.ok) {
           const apiData = await response.json();
+          setGroundingData(apiData);
           if (apiData.verdict === "fraud" && localRes.riskLevel !== "fraud") {
             localRes.riskLevel = "fraud";
             localRes.riskScore = Math.max(localRes.riskScore, apiData.riskScore);
@@ -933,6 +937,18 @@ export default function JobScreener({
                   {result.riskLevel === "safe" && "No major red flags detected. Verify CIN at mca.gov.in and GSTIN at gst.gov.in as a final step."}
                 </div>
               </div>
+
+              {/* Real-Time Gemini AI Grounding & Web Intelligence */}
+              {groundingData && (
+                <RealTimeGroundingCard
+                  entityProfile={groundingData.entityProfile}
+                  liveWebStatus={groundingData.liveWebStatus}
+                  riskRationale={groundingData.riskRationale}
+                  actionSteps={groundingData.actionSteps}
+                  provider={groundingData.telemetry?.provider}
+                  lang={lang}
+                />
+              )}
 
               {/* Extracted entities */}
               {Object.values(result.extractedEntities).some(Boolean) && (

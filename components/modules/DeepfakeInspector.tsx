@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   XCircle,
 } from 'lucide-react';
+import RealTimeGroundingCard from '@/components/RealTimeGroundingCard';
 
 interface DeepfakeInspectorProps {
   lang: 'en' | 'hi';
@@ -236,6 +237,18 @@ export default function DeepfakeInspector({ lang, onAuditComplete }: DeepfakeIns
               </span>
             </div>
           </div>
+
+          {/* Real-Time Gemini AI Grounding & Web Intelligence */}
+          {(results.entityProfile || results.liveWebStatus) && (
+            <RealTimeGroundingCard
+              entityProfile={results.entityProfile}
+              liveWebStatus={results.liveWebStatus}
+              riskRationale={results.riskRationale}
+              actionSteps={results.actionSteps}
+              provider={results.telemetry?.provider}
+              lang={lang}
+            />
+          )}
 
           {/* Evidence List */}
           <div>
