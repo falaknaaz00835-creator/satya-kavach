@@ -29,6 +29,7 @@ import {
 import RealTimeGroundingCard from "@/components/RealTimeGroundingCard";
 import { parseUPIIntent, computeSHA256 } from "@/lib/real-forensics";
 import { takeIntake } from "@/lib/intake";
+import { InstrumentHeader, AwaitingFindings } from "@/components/instrument";
 
 /* ─────────────────────────────────────────
    Types
@@ -446,47 +447,56 @@ const SAMPLES: SampleCase[] = [
    Programmatic QR thumbnail SVGs
 ───────────────────────────────────────── */
 function QRThumbnail({ dangerous, label }: { dangerous: boolean; label: string }) {
-  const color = dangerous ? "#DC2626" : "#059669";
-  const bg = dangerous ? "#FEF2F2" : "#ECFDF5";
-  // Simple 5x5 QR-like pattern
-  const pattern = dangerous
-    ? [[1,1,1,0,1],[1,0,1,1,0],[1,1,0,0,1],[0,1,1,0,1],[1,0,1,1,1]]
-    : [[1,1,1,0,0],[1,0,1,0,1],[1,1,1,1,0],[0,0,0,0,1],[1,1,0,1,1]];
+  const ink = "#14140F";
+  const signal = dangerous ? "#B3382B" : "#12715B";
+
+  /* Deterministic module pattern — no Math.random, so SSR and client agree */
+  const seed = Array.from(label).reduce((a, c) => a + c.charCodeAt(0), 7);
+  const grid = Array.from({ length: 11 }, (_, r) =>
+    Array.from({ length: 11 }, (_, c) => ((r * 11 + c) * seed) % 5 < 2)
+  );
+
+  const finder = (x: number, y: number) => (
+    <g key={`f-${x}-${y}`}>
+      <rect x={x} y={y} width="20" height="20" rx="3" fill="none" stroke={signal} strokeWidth="4" />
+      <rect x={x + 7} y={y + 7} width="6" height="6" rx="1" fill={signal} />
+    </g>
+  );
 
   return (
-    <svg viewBox="0 0 80 80" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-      <rect width="80" height="80" rx="6" fill={bg} />
-      {/* QR finder patterns */}
-      <rect x="8" y="8" width="20" height="20" rx="2" fill={color} opacity="0.2" />
-      <rect x="10" y="10" width="16" height="16" rx="1" fill={color} opacity="0.3" />
-      <rect x="12" y="12" width="12" height="12" rx="1" fill={color} />
-      <rect x="52" y="8" width="20" height="20" rx="2" fill={color} opacity="0.2" />
-      <rect x="54" y="10" width="16" height="16" rx="1" fill={color} opacity="0.3" />
-      <rect x="56" y="12" width="12" height="12" rx="1" fill={color} />
-      <rect x="8" y="52" width="20" height="20" rx="2" fill={color} opacity="0.2" />
-      <rect x="10" y="54" width="16" height="16" rx="1" fill={color} opacity="0.3" />
-      <rect x="12" y="56" width="12" height="12" rx="1" fill={color} />
-      {/* Data modules */}
-      {pattern.map((row, r) =>
-        row.map((cell, c) =>
-          cell ? (
+    <svg viewBox="0 0 80 80" className="w-full h-full" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+      <rect width="80" height="80" rx="4" fill="#FFFDF8" />
+      {grid.map((row, r) =>
+        row.map((on, c) => {
+          const inFinder =
+            (r < 5 && c < 5) || (r < 5 && c > 5) || (r > 5 && c < 5);
+          if (!on || inFinder) return null;
+          return (
             <rect
               key={`${r}-${c}`}
-              x={34 + c * 7}
-              y={34 + r * 7}
-              width="6"
-              height="6"
-              rx="1"
-              fill={color}
-              opacity={0.6 + Math.random() * 0.4}
+              x={8 + c * 6}
+              y={8 + r * 6}
+              width="4.5"
+              height="4.5"
+              rx="0.8"
+              fill={ink}
+              opacity="0.78"
             />
-          ) : null
-        )
+          );
+        })
       )}
-      {/* Label */}
-      <text x="40" y="76" textAnchor="middle" fontSize="5" fill={color} fontWeight="600">
-        {label.slice(0, 12)}
-      </text>
+      {finder(6, 6)}
+      {finder(54, 6)}
+      {finder(6, 54)}
+      <rect x="62" y="62" width="12" height="12" rx="2" fill={signal} opacity="0.16" />
+      <path
+        d={dangerous ? "M65 71 L71 65 M65 65 L71 71" : "M65 68.5 L67.5 71 L71.5 66"}
+        stroke={signal}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+      />
     </svg>
   );
 }
@@ -774,28 +784,25 @@ export default function QRScanner({
   };
 
   return (
-    <div className="p-6 h-full">
-      {/* ── Page header ── */}
-      <div className="mb-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="font-display text-[22px] leading-tight text-ink dark:text-white">
-              {lang === "en" ? "QR Code & Trap-Link Scanner" : "QR कोड और ट्रैप-लिंक स्कैनर"}
-            </h1>
-            <p className="text-sm text-ink-muted dark:text-slate-400 mt-1">
-              {lang === "en"
-                ? "Collect-Request Detector · URL Shortener Unwrapper · Typosquat Analyser · Phishing Signal Scanner"
-                : "कलेक्ट रिक्वेस्ट · URL शॉर्टनर · टाइपोस्क्वॉट · फ़िशिंग सिग्नल"}
-            </p>
-          </div>
-          {mode === "done" && (
-            <button onClick={reset} className="sk-btn-ghost text-xs gap-1.5">
+    <div className="mx-auto w-full max-w-[1280px] px-5 pb-24 pt-6 sm:px-8">
+      <InstrumentHeader
+        no="02"
+        note={lang === "en" ? "Payload forensics" : "पेलोड फॉरेंसिक"}
+        title={lang === "en" ? "QR code & trap link" : "QR कोड व ट्रैप लिंक"}
+        methods={
+          lang === "en"
+            ? "QR payload decode · UPI intent parser · shortener unwind · typo-squat graph"
+            : "QR पेयलोड डिकोड · UPI इंटेंट पार्सर · शॉर्टनर अनवाइंड · टाइपोस्क्वॉट"
+        }
+        actions={
+          mode === "done" ? (
+            <button onClick={reset} className="sk-btn-ghost gap-1.5 px-3 py-2 text-xs">
               <RefreshCcw className="w-3.5 h-3.5" />
-              {lang === "en" ? "New Scan" : "नई जांच"}
+              {lang === "en" ? "New scan" : "नई जाँच"}
             </button>
-          )}
-        </div>
-      </div>
+          ) : null
+        }
+      />
 
       {/* ── Split-pane ── */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -805,12 +812,11 @@ export default function QRScanner({
           {/* Sample cases */}
           <div className="sk-card p-4">
             <div className="flex items-center gap-2 mb-3">
-              <Zap className="w-4 h-4 text-warning" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400">
-                {lang === "en" ? "1-Click Demo Cases" : "1-क्लिक डेमो केस"}
+              <span className="font-mono text-[10px] uppercase tracking-eyebrow text-ink-faint dark:text-white/35">
+                {lang === "en" ? "Reference payloads" : "संदर्भ पेलोड"}
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="divide-y divide-rule/80 dark:divide-white/10">
               {SAMPLES.map((s) => {
                 const isDangerous = s.inputType === "upi"
                   ? s.input.includes("mode=02") || s.input.includes("am=")
@@ -821,22 +827,31 @@ export default function QRScanner({
                     key={s.id}
                     onClick={() => loadSample(s)}
                     className={clsx(
-                      "rounded-lg border-2 p-2 text-left transition-all hover:shadow-card-hover",
-                      activeSample === s.id
-                        ? isLegit ? "border-trust" : "border-fraud"
-                        : "border-border dark:border-dark-border hover:border-ink-muted"
+                      "flex w-full items-center gap-3 py-2.5 text-left transition-colors",
+                      activeSample === s.id ? "opacity-100" : "opacity-90 hover:opacity-100"
                     )}
                   >
-                    <div className="aspect-square rounded-md overflow-hidden mb-2 w-14 mx-auto">
+                    <span
+                      className={clsx(
+                        "grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded border bg-card p-1 transition-colors dark:bg-white/[0.06]",
+                        activeSample === s.id
+                          ? isLegit
+                            ? "border-trust"
+                            : "border-fraud"
+                          : "border-rule dark:border-white/15"
+                      )}
+                    >
                       <QRThumbnail dangerous={!isLegit} label={s.label} />
-                    </div>
-                    <p className="text-[11px] font-semibold text-ink dark:text-white leading-tight">
-                      {lang === "en" ? s.label : s.labelHi}
-                    </p>
-                    <p className="text-[10px] text-ink-muted dark:text-slate-500 mt-0.5">{s.category}</p>
-                    <div className="mt-1.5">
-                      <ThreatBadge level={isLegit ? "safe" : "dangerous"} />
-                    </div>
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[12.5px] font-medium text-ink dark:text-white/90">
+                        {lang === "en" ? s.label : s.labelHi}
+                      </span>
+                      <span className="mt-0.5 block truncate font-mono text-[9px] uppercase tracking-wider text-ink-faint dark:text-white/30">
+                        {s.category}
+                      </span>
+                    </span>
+                    <ThreatBadge level={isLegit ? "safe" : "dangerous"} />
                   </button>
                 );
               })}
@@ -846,8 +861,8 @@ export default function QRScanner({
           {/* Paste URL / UPI string */}
           <div className="sk-card p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <Link2 className="w-4 h-4 text-ink-muted" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400">
+              <Link2 className="h-3.5 w-3.5 text-ink-faint" strokeWidth={1.8} />
+              <span className="font-mono text-[10px] uppercase tracking-eyebrow text-ink-faint dark:text-white/35">
                 {lang === "en" ? "Paste URL or UPI String" : "URL या UPI स्ट्रिंग पेस्ट करें"}
               </span>
             </div>
@@ -858,25 +873,25 @@ export default function QRScanner({
                 ? "Paste any suspicious link or upi://pay?... string here…"
                 : "यहाँ संदिग्ध लिंक या UPI स्ट्रिंग पेस्ट करें…"}
               rows={3}
-              className="w-full px-3 py-2 text-sm font-mono border border-border dark:border-dark-border rounded-lg bg-surface dark:bg-dark-surface text-ink dark:text-white placeholder:text-ink-faint dark:placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-ink/20 dark:focus:ring-white/10 resize-none"
+              className="w-full resize-none rounded-lg border border-rule bg-card px-3 py-2.5 font-mono text-[12.5px] text-ink placeholder:text-ink-faint focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/10 dark:border-white/15 dark:bg-dark-surface dark:text-white dark:placeholder:text-white/25 dark:focus:border-white/40"
             />
             <button
               onClick={scanPastedInput}
               disabled={!pastedInput.trim() || mode === "loading"}
-              className="sk-btn-primary w-full"
+              className="sk-btn-primary w-full py-2 text-xs"
             >
-              <Search className="w-4 h-4" />
-              {lang === "en" ? "Scan This Link / QR Data" : "इस लिंक की जांच करें"}
+              <Search className="h-3.5 w-3.5" />
+              {lang === "en" ? "Inspect this payload" : "इस पेलोड की जाँच करें"}
             </button>
           </div>
 
           {/* QR Image Upload dropzone */}
           <div
             className={clsx(
-              "sk-card rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-3 cursor-pointer transition-all duration-150 p-8",
+              "relative flex min-h-[128px] cursor-pointer flex-col items-center justify-center gap-2.5 rounded-xl border border-dashed px-4 py-6 transition-colors duration-150",
               dragActive
-                ? "border-ink bg-ink/5 dark:border-white dark:bg-white/5"
-                : "border-border dark:border-dark-border hover:border-ink-muted hover:bg-surface dark:hover:border-slate-500"
+                ? "border-accent bg-accent-bg/50 dark:border-accent"
+                : "border-rule-strong/80 bg-card/40 hover:border-ink-faint hover:bg-card dark:bg-white/[0.02] dark:hover:border-white/30 dark:hover:bg-white/[0.04]"
             )}
             onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
             onDragLeave={() => setDragActive(false)}
@@ -893,20 +908,20 @@ export default function QRScanner({
             {mode === "loading" ? (
               <div className="flex flex-col items-center gap-2">
                 <div className="w-8 h-8 border-2 border-ink dark:border-white border-t-transparent rounded-full animate-spin" />
-                <p className="text-sm text-ink-muted dark:text-slate-400">
+                <p className="text-sm text-ink-muted dark:text-white/45">
                   {lang === "en" ? "Decoding QR & analysing threats…" : "QR डिकोड और खतरे का विश्लेषण…"}
                 </p>
               </div>
             ) : (
               <>
-                <div className="w-12 h-12 rounded-xl bg-surface dark:bg-dark-border border border-border dark:border-dark-border flex items-center justify-center">
-                  <QrCode className="w-6 h-6 text-ink-muted dark:text-slate-400" />
+                <div className="w-12 h-12 rounded-xl bg-paper-sunk dark:bg-white/10 border border-rule dark:border-dark-border flex items-center justify-center">
+                  <QrCode className="w-6 h-6 text-ink-muted dark:text-white/45" />
                 </div>
                 <div className="text-center">
                   <p className="text-sm font-medium text-ink dark:text-white">
                     {lang === "en" ? "Drop QR code image to decode" : "QR कोड छवि यहाँ छोड़ें"}
                   </p>
-                  <p className="text-xs text-ink-muted dark:text-slate-500 mt-1">PNG, JPG, WebP — decoded locally, nothing uploaded</p>
+                  <p className="text-xs text-ink-muted dark:text-white/35 mt-1">PNG, JPG, WebP — decoded locally, nothing uploaded</p>
                 </div>
                 {qrDecodeError && (
                   <p className="text-xs text-fraud font-medium">{qrDecodeError}</p>
@@ -919,21 +934,20 @@ export default function QRScanner({
         {/* ── RIGHT: Analysis results ── */}
         <div className="flex flex-col gap-4 overflow-y-auto">
           {mode === "idle" && (
-            <div className="flex flex-col items-center justify-center h-64 gap-4 text-center sk-card p-8">
-              <div className="w-16 h-16 rounded-2xl bg-surface dark:bg-dark-border border border-border dark:border-dark-border flex items-center justify-center">
-                <QrCode className="w-7 h-7 text-ink-faint dark:text-slate-500" />
-              </div>
-              <div>
-                <p className="font-semibold text-ink dark:text-white">
-                  {lang === "en" ? "Awaiting Input" : "इनपुट की प्रतीक्षा"}
-                </p>
-                <p className="text-sm text-ink-muted dark:text-slate-400 mt-1">
-                  {lang === "en"
-                    ? "Select a demo case, paste a link, or upload a QR image to start scanning."
-                    : "डेमो केस चुनें, लिंक पेस्ट करें या QR छवि अपलोड करें।"}
-                </p>
-              </div>
-            </div>
+            <AwaitingFindings
+              icon={QrCode}
+              title={lang === "en" ? "Nothing decoded yet" : "अभी कुछ डिकोड नहीं हुआ"}
+              body={
+                lang === "en"
+                  ? "Drop the QR image, paste the link, or load a reference case. The decoded payload and its verdict land here."
+                  : "QR इमेज डालें, लिंक पेस्ट करें या संदर्भ केस खोलें। डिकोड किया गया पेलोड और निर्णय यहाँ आएगा।"
+              }
+              steps={
+                lang === "en"
+                  ? ["Decoded locally — the image never leaves this tab", "upi://pay is a payment request, never a receipt", "A collect request debits you, it does not credit you"]
+                  : ["डिकोडिंग स्थानीय है — इमेज इस टैब से बाहर नहीं जाती", "upi://pay भुगतान माँग है, रसीद नहीं", "कलेक्ट रिक्वेस्ट पैसा काटती है, देती नहीं"]
+              }
+            />
           )}
 
           {mode === "done" && result && (
@@ -947,27 +961,27 @@ export default function QRScanner({
               )}>
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400 mb-1.5">
+                    <p className="font-mono text-[10px] uppercase tracking-eyebrow text-ink-faint dark:text-white/35 mb-1.5">
                       {lang === "en" ? "Threat Assessment" : "खतरे का आकलन"}
                     </p>
                     <div className="flex items-center gap-3 flex-wrap">
                       <ThreatBadge level={result.threatLevel} />
-                      <span className="text-sm font-mono text-ink-muted dark:text-slate-400">
+                      <span className="text-sm font-mono text-ink-muted dark:text-white/45">
                         {result.confidence}% confidence
                       </span>
                       <span className={clsx(
                         "text-xs font-semibold px-2 py-0.5 rounded border font-mono",
                         result.decoded.type === "upi"
-                          ? "border-ink-faint text-ink-muted dark:border-slate-600 dark:text-slate-400"
-                          : "border-ink-faint text-ink-muted dark:border-slate-600 dark:text-slate-400"
+                          ? "border-ink-faint text-ink-muted dark:border-white/20 dark:text-white/45"
+                          : "border-ink-faint text-ink-muted dark:border-white/20 dark:text-white/45"
                       )}>
                         {result.decoded.type.toUpperCase()}
                       </span>
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-[10px] text-ink-faint dark:text-slate-600">Scanned</p>
-                    <p className="text-[11px] font-mono text-ink-muted dark:text-slate-400">{result.timestamp}</p>
+                    <p className="text-[10px] text-ink-faint dark:text-white/25">Scanned</p>
+                    <p className="text-[11px] font-mono text-ink-muted dark:text-white/45">{result.timestamp}</p>
                   </div>
                 </div>
               </div>
@@ -975,25 +989,25 @@ export default function QRScanner({
               {/* Decoded content */}
               <div className="sk-card p-4 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400">
+                  <span className="font-mono text-[10px] uppercase tracking-eyebrow text-ink-faint dark:text-white/35">
                     {lang === "en" ? "Decoded Content" : "डिकोड की गई सामग्री"}
                   </span>
                   <button
                     onClick={copyDecoded}
-                    className="flex items-center gap-1 text-xs text-ink-muted dark:text-slate-400 hover:text-ink dark:hover:text-white transition-colors"
+                    className="flex items-center gap-1 text-xs text-ink-muted dark:text-white/45 hover:text-ink dark:hover:text-white transition-colors"
                   >
                     <Copy className="w-3.5 h-3.5" />
                     {copied ? "Copied!" : "Copy"}
                   </button>
                 </div>
-                <p className="sk-mono text-xs break-all text-ink dark:text-slate-200 bg-surface dark:bg-dark-surface rounded-lg p-3 border border-border dark:border-dark-border leading-relaxed">
+                <p className="sk-mono text-xs break-all text-ink dark:text-white/75 bg-paper-sunk dark:bg-white/[0.03] rounded-lg p-3 border border-rule dark:border-dark-border leading-relaxed">
                   {result.decoded.rawText}
                 </p>
                 {result.finalUrl && (
                   <a
                     href="#"
                     onClick={(e) => e.preventDefault()}
-                    className="inline-flex items-center gap-1 text-xs text-ink-muted dark:text-slate-400 hover:text-fraud transition-colors"
+                    className="inline-flex items-center gap-1 text-xs text-ink-muted dark:text-white/45 hover:text-fraud transition-colors"
                     title="Do NOT click this in a real scenario"
                   >
                     <ExternalLink className="w-3 h-3" />
@@ -1004,57 +1018,57 @@ export default function QRScanner({
 
               {/* 🌐 Origin Trace & Network Immunization Active Card */}
               {neutralizationData && (
-                <div className="sk-card p-5 border border-indigo-500/30 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 space-y-4 shadow-sm">
+                <div className="sk-card p-5 border border-rule  space-y-4 shadow-sm">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg bg-indigo-600 text-white">
+                      <div className="p-1.5 rounded-lg bg-accent text-white">
                         <Globe2 className="w-4 h-4 animate-spin-slow" />
                       </div>
                       <div>
                         <h4 className="text-xs font-bold text-ink dark:text-white flex items-center gap-1.5">
                           Origin Trace & Network Immunization Active
                         </h4>
-                        <p className="text-[10px] text-ink-muted dark:text-slate-400 font-mono">
+                        <p className="text-[10px] text-ink-muted dark:text-white/45 font-mono">
                           Infrastructure Intelligence & Automated Takedown Core
                         </p>
                       </div>
                     </div>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-800 flex items-center gap-1">
-                      <Shield className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-accent/10 dark:text-indigo-300 border border-indigo-300 dark:border-accent/30 flex items-center gap-1">
+                      <Shield className="w-3 h-3 text-accent" />
                       IMMUNIZED
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className="bg-surface/80 dark:bg-dark-surface/80 p-2.5 rounded-lg border border-border/80 dark:border-dark-border/80">
-                      <p className="text-[10px] text-ink-faint dark:text-slate-500 font-semibold uppercase flex items-center gap-1">
-                        <Server className="w-3 h-3 text-indigo-500" /> Host IP & Server
+                    <div className="bg-surface/80 dark:bg-dark-surface/80 p-2.5 rounded-lg border border-rule/80 dark:border-dark-border/80">
+                      <p className="text-[10px] text-ink-faint dark:text-white/35 font-semibold uppercase flex items-center gap-1">
+                        <Server className="w-3 h-3 text-accent" /> Host IP & Server
                       </p>
                       <p className="font-mono font-bold text-ink dark:text-white mt-0.5 truncate">
                         {neutralizationData.origin.resolvedIp}
                       </p>
-                      <p className="text-[11px] text-ink-muted dark:text-slate-400 truncate">
+                      <p className="text-[11px] text-ink-muted dark:text-white/45 truncate">
                         {neutralizationData.origin.city}, {neutralizationData.origin.country}
                       </p>
                     </div>
 
-                    <div className="bg-surface/80 dark:bg-dark-surface/80 p-2.5 rounded-lg border border-border/80 dark:border-dark-border/80">
-                      <p className="text-[10px] text-ink-faint dark:text-slate-500 font-semibold uppercase flex items-center gap-1">
-                        <Globe2 className="w-3 h-3 text-indigo-500" /> Hosting Provider / ASN
+                    <div className="bg-surface/80 dark:bg-dark-surface/80 p-2.5 rounded-lg border border-rule/80 dark:border-dark-border/80">
+                      <p className="text-[10px] text-ink-faint dark:text-white/35 font-semibold uppercase flex items-center gap-1">
+                        <Globe2 className="w-3 h-3 text-accent" /> Hosting Provider / ASN
                       </p>
                       <p className="font-semibold text-ink dark:text-white mt-0.5 truncate">
                         {neutralizationData.origin.hostingProvider}
                       </p>
-                      <p className="text-[11px] font-mono text-ink-muted dark:text-slate-400">
+                      <p className="text-[11px] font-mono text-ink-muted dark:text-white/45">
                         {neutralizationData.origin.asn} · {neutralizationData.origin.domainAgeDays}d old
                       </p>
                     </div>
                   </div>
 
                   {/* Live Network Protection Counter */}
-                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200">
+                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-trust-bg dark:bg-trust/10/40 border border-trust/25 text-emerald-900 dark:text-emerald-200">
                     <div className="flex items-center gap-2">
-                      <Zap className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      <Zap className="w-4 h-4 text-trust" />
                       <span className="text-xs font-semibold">
                         Shielding{" "}
                         <span className="font-mono font-bold underline">
@@ -1063,7 +1077,7 @@ export default function QRScanner({
                         Users Across Bharat Network
                       </span>
                     </div>
-                    <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-400 font-bold uppercase">
+                    <span className="text-[10px] font-mono text-trust font-bold uppercase">
                       Active Defense
                     </span>
                   </div>
@@ -1071,7 +1085,7 @@ export default function QRScanner({
                   {/* Takedown Button */}
                   <button
                     onClick={() => setShowAbuseModal(true)}
-                    className="w-full py-2 px-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs flex items-center justify-center gap-2 transition-colors shadow-sm"
+                    className="w-full py-2 px-3 rounded-lg bg-accent hover:bg-indigo-700 text-white font-medium text-xs flex items-center justify-center gap-2 transition-colors shadow-sm"
                   >
                     <Mail className="w-3.5 h-3.5" />
                     Generate Upstream Abuse Takedown Notice
@@ -1094,7 +1108,7 @@ export default function QRScanner({
               {/* UPI params breakdown */}
               {result.upiParams && (
                 <div className="sk-card p-4 space-y-3">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400">
+                  <span className="font-mono text-[10px] uppercase tracking-eyebrow text-ink-faint dark:text-white/35">
                     {lang === "en" ? "UPI Parameter Breakdown" : "UPI पैरामीटर विश्लेषण"}
                   </span>
                   <div className="grid grid-cols-2 gap-2">
@@ -1106,9 +1120,9 @@ export default function QRScanner({
                       { key: "Note (tn)",          val: result.upiParams.tn },
                       { key: "Txn Ref (tr)",       val: result.upiParams.tr },
                     ].filter(p => p.val).map(({ key, val }) => (
-                      <div key={key} className="bg-surface dark:bg-dark-surface rounded-lg p-2.5 border border-border dark:border-dark-border">
-                        <p className="text-[10px] text-ink-faint dark:text-slate-600 font-medium mb-0.5">{key}</p>
-                        <p className="sk-mono text-xs text-ink dark:text-slate-200 break-all">
+                      <div key={key} className="bg-paper-sunk dark:bg-white/[0.03] rounded-lg p-2.5 border border-rule dark:border-dark-border">
+                        <p className="text-[10px] text-ink-faint dark:text-white/25 font-medium mb-0.5">{key}</p>
+                        <p className="sk-mono text-xs text-ink dark:text-white/75 break-all">
                           {val}
                           {key === "Mode" && val === "02" && (
                             <span className="ml-1 text-fraud font-bold">⚠ COLLECT</span>
@@ -1125,7 +1139,7 @@ export default function QRScanner({
                 <div className="sk-card p-4 space-y-3">
                   <div className="flex items-center gap-2">
                     <ShieldAlert className="w-4 h-4 text-fraud" />
-                    <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400">
+                    <span className="font-mono text-[10px] uppercase tracking-eyebrow text-ink-faint dark:text-white/35">
                       {lang === "en" ? `Threat Flags (${result.flags.length})` : `खतरे के संकेत (${result.flags.length})`}
                     </span>
                   </div>
@@ -1140,7 +1154,7 @@ export default function QRScanner({
                           )}>
                             {flag.label}
                           </p>
-                          <p className="text-[11px] text-ink-muted dark:text-slate-400 mt-0.5 leading-relaxed">
+                          <p className="text-[11px] text-ink-muted dark:text-white/45 mt-0.5 leading-relaxed">
                             {flag.detail}
                           </p>
                         </div>
@@ -1159,7 +1173,7 @@ export default function QRScanner({
                   >
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-trust" />
-                      <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400">
+                      <span className="font-mono text-[10px] uppercase tracking-eyebrow text-ink-faint dark:text-white/35">
                         {lang === "en" ? `Safe Signals (${result.safeSignals.length})` : `सुरक्षित संकेत`}
                       </span>
                     </div>
@@ -1168,7 +1182,7 @@ export default function QRScanner({
                   {showEvidence && (
                     <ul className="space-y-1.5 mt-2">
                       {result.safeSignals.map((s, i) => (
-                        <li key={i} className="flex items-start gap-2 text-xs text-ink dark:text-slate-200">
+                        <li key={i} className="flex items-start gap-2 text-xs text-ink dark:text-white/75">
                           <ArrowRight className="w-3.5 h-3.5 text-trust shrink-0 mt-0.5" />
                           {s}
                         </li>
@@ -1191,10 +1205,10 @@ export default function QRScanner({
       {/* ── Abuse Takedown Notice Modal ── */}
       {showAbuseModal && neutralizationData?.abuseReport && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/50 backdrop-blur-xs">
-          <div className="bg-card dark:bg-dark-card border border-border dark:border-dark-border rounded-xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-border dark:border-dark-border pb-3">
+          <div className="bg-card dark:bg-dark-card border border-rule dark:border-dark-border rounded-xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-rule dark:border-dark-border pb-3">
               <div className="flex items-center gap-2">
-                <Mail className="w-5 h-5 text-indigo-600" />
+                <Mail className="w-5 h-5 text-accent" />
                 <h3 className="font-bold text-sm text-ink dark:text-white">
                   Formal Upstream Provider Abuse Takedown Notice
                 </h3>
@@ -1208,13 +1222,13 @@ export default function QRScanner({
             </div>
 
             <div className="space-y-1.5 text-xs">
-              <p className="text-ink-muted dark:text-slate-400">
+              <p className="text-ink-muted dark:text-white/45">
                 <strong className="text-ink dark:text-white">Recipient:</strong>{" "}
-                <span className="font-mono text-indigo-600 dark:text-indigo-400 font-semibold">
+                <span className="font-mono text-accent font-semibold">
                   {neutralizationData.abuseReport.recipientEmail}
                 </span>
               </p>
-              <p className="text-ink-muted dark:text-slate-400">
+              <p className="text-ink-muted dark:text-white/45">
                 <strong className="text-ink dark:text-white">Subject:</strong>{" "}
                 {neutralizationData.abuseReport.emailSubject}
               </p>
@@ -1222,7 +1236,7 @@ export default function QRScanner({
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-semibold text-ink-muted dark:text-slate-400">
+                <label className="text-xs font-semibold text-ink-muted dark:text-white/45">
                   Notice Content (IT Act Sec 79 / CERT-In Format)
                 </label>
                 <button
@@ -1231,7 +1245,7 @@ export default function QRScanner({
                     setCopiedAbuseNotice(true);
                     setTimeout(() => setCopiedAbuseNotice(false), 2000);
                   }}
-                  className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+                  className="flex items-center gap-1 text-xs text-accent hover:underline"
                 >
                   <Copy className="w-3 h-3" />
                   {copiedAbuseNotice ? "Copied!" : "Copy Full Notice"}
@@ -1241,12 +1255,12 @@ export default function QRScanner({
                 readOnly
                 value={neutralizationData.abuseReport.emailBody}
                 rows={11}
-                className="w-full text-xs font-mono p-3 rounded-lg border border-border dark:border-dark-border bg-surface dark:bg-dark-surface text-ink dark:text-white resize-none"
+                className="w-full text-xs font-mono p-3 rounded-lg border border-rule dark:border-dark-border bg-paper-sunk dark:bg-white/[0.03] text-ink dark:text-white resize-none"
               />
             </div>
 
             <div className="flex items-center justify-between pt-2">
-              <span className="text-[11px] font-mono text-ink-faint dark:text-slate-500">
+              <span className="text-[11px] font-mono text-ink-faint dark:text-white/35">
                 Target IP: {neutralizationData.origin.resolvedIp}
               </span>
               <div className="flex gap-2">

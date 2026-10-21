@@ -428,8 +428,8 @@ export default function TriageHome({
           <h2 className="font-display text-[22px] font-normal text-ink dark:text-white">
             {lang === "en" ? "The instruments" : "यंत्र"}
           </h2>
-          <span className="pb-1 font-mono text-2xs uppercase tracking-eyebrow text-ink-faint dark:text-white/30">
-            {lang === "en" ? "Five, each with one job" : "पाँच, हर एक का एक काम"}
+          <span className="hidden pb-1 font-mono text-2xs uppercase tracking-eyebrow text-ink-faint sm:block dark:text-white/30">
+            {lang === "en" ? "Numbered, one job each" : "क्रमांकित, हर एक का एक काम"}
           </span>
         </div>
 

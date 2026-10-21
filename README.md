@@ -101,7 +101,7 @@ The interface is built to read like a forensic ledger rather than a SaaS dashboa
 | Trust Emerald | `#12715B` | Genuine / verified |
 | Warning Ochre | `#A9700C` | Suspicious |
 | Fraud Crimson | `#B3382B` | Fraud detected |
-| Fonts | Fraunces · Inter · JetBrains Mono | Display · UI · every hash and timestamp |
+| Fonts | Fraunces · Inter · JetBrains Mono · Noto (Devanagari) | Display · UI · every hash and timestamp · Hindi. All self-hosted in `/public/fonts`, no CDN |
 
 ### Interface at a glance
 

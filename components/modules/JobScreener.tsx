@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import RealTimeGroundingCard from "@/components/RealTimeGroundingCard";
 import { takeIntake } from "@/lib/intake";
+import { InstrumentHeader, AwaitingFindings } from "@/components/instrument";
 
 /* ─────────────────────────────────────────
    Types
@@ -572,7 +573,7 @@ function RiskScoreRing({ score, level }: { score: number; level: RiskLevel }) {
       </svg>
       <div className="absolute text-center">
         <p className="text-lg font-bold leading-none" style={{ color }}>{score}</p>
-        <p className="text-[9px] text-ink-faint dark:text-slate-600 leading-none mt-0.5">RISK</p>
+        <p className="text-[9px] text-ink-faint dark:text-white/25 leading-none mt-0.5">RISK</p>
       </div>
     </div>
   );
@@ -751,26 +752,25 @@ export default function JobScreener({
   };
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="mb-6 flex items-start justify-between">
-        <div>
-          <h1 className="font-display text-[22px] leading-tight text-ink dark:text-white">
-            {lang === "en" ? "Fake Job & Internship Offer Letter Screener" : "नकली नौकरी व इंटर्नशिप ऑफर लेटर जांचकर्ता"}
-          </h1>
-          <p className="text-sm text-ink-muted dark:text-slate-400 mt-1">
-            {lang === "en"
-              ? "Fee Demand Detector · Fake Domain Analyser · CIN/GST Validator · Salary Anomaly Scanner"
-              : "शुल्क मांग · नकली डोमेन · CIN/GST सत्यापन · वेतन विसंगति"}
-          </p>
-        </div>
-        {mode === "done" && (
-          <button onClick={reset} className="sk-btn-ghost text-xs gap-1.5">
-            <RefreshCcw className="w-3.5 h-3.5" />
-            {lang === "en" ? "New Scan" : "नई जांच"}
-          </button>
-        )}
-      </div>
+    <div className="mx-auto w-full max-w-[1280px] px-5 pb-24 pt-6 sm:px-8">
+      <InstrumentHeader
+        no="03"
+        note={lang === "en" ? "Document screening" : "दस्तावेज़ स्क्रीनिंग"}
+        title={lang === "en" ? "Job offer letter" : "नौकरी ऑफर लेटर"}
+        methods={
+          lang === "en"
+            ? "Upfront-fee flags · domain age · CIN / GST validation · salary anomaly"
+            : "अग्रिम शुल्क · डोमेन आयु · CIN / GST सत्यापन · वेतन विसंगति"
+        }
+        actions={
+          mode === "done" ? (
+            <button onClick={reset} className="sk-btn-ghost gap-1.5 px-3 py-2 text-xs">
+              <RefreshCcw className="w-3.5 h-3.5" />
+              {lang === "en" ? "New screening" : "नई जाँच"}
+            </button>
+          ) : null
+        }
+      />
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* ── LEFT: Input ── */}
@@ -778,40 +778,41 @@ export default function JobScreener({
 
           {/* Sample cases */}
           <div className="sk-card p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Zap className="w-4 h-4 text-warning" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400">
-                {lang === "en" ? "1-Click Demo Cases" : "1-क्लिक डेमो केस"}
+            <div className="mb-1 flex items-baseline justify-between gap-3">
+              <span className="font-mono text-[10px] uppercase tracking-eyebrow text-ink-faint dark:text-white/35">
+                {lang === "en" ? "Reference letters" : "संदर्भ पत्र"}
+              </span>
+              <span className="hidden font-mono text-[9px] uppercase tracking-wider text-ink-faint/80 sm:block dark:text-white/20">
+                {lang === "en" ? "load one to see the method" : "तरीका देखने के लिए एक खोलें"}
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="divide-y divide-rule/80 dark:divide-white/10">
               {SAMPLES.map((s) => (
                 <button
                   key={s.id}
                   onClick={() => loadSample(s)}
                   className={clsx(
-                    "rounded-lg border-2 p-3 text-left transition-all hover:shadow-card-hover",
-                    activeSample === s.id
-                      ? s.expectedRisk === "safe" ? "border-trust" : "border-fraud"
-                      : "border-border dark:border-dark-border hover:border-ink-muted"
+                    "flex w-full items-center gap-2.5 py-2.5 text-left transition-opacity",
+                    activeSample === s.id ? "opacity-100" : "opacity-90 hover:opacity-100"
                   )}
                 >
-                  <div className={clsx(
-                    "w-8 h-8 rounded-lg flex items-center justify-center mb-2",
-                    s.expectedRisk === "safe" ? "bg-trust-bg" : "bg-fraud-bg"
+                  <span className={clsx(
+                    "grid h-8 w-8 shrink-0 place-items-center rounded border",
+                    s.expectedRisk === "safe"
+                      ? "border-trust/25 bg-trust-bg text-trust"
+                      : "border-fraud/25 bg-fraud-bg text-fraud"
                   )}>
-                    <BriefcaseBusiness className={clsx(
-                      "w-4 h-4",
-                      s.expectedRisk === "safe" ? "text-trust" : "text-fraud"
-                    )} />
-                  </div>
-                  <p className="text-[11px] font-semibold text-ink dark:text-white leading-tight">
-                    {lang === "en" ? s.label : s.labelHi}
-                  </p>
-                  <p className="text-[10px] text-ink-muted dark:text-slate-500 mt-0.5">{s.category}</p>
-                  <div className="mt-1.5">
-                    <RiskBadge level={s.expectedRisk} />
-                  </div>
+                    <BriefcaseBusiness className="h-3.5 w-3.5" strokeWidth={1.8} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[12.5px] font-medium text-ink dark:text-white/90">
+                      {lang === "en" ? s.label : s.labelHi}
+                    </span>
+                    <span className="mt-0.5 block truncate font-mono text-[9px] uppercase tracking-wider text-ink-faint dark:text-white/30">
+                      {s.category}
+                    </span>
+                  </span>
+                  <RiskBadge level={s.expectedRisk} />
                 </button>
               ))}
             </div>
@@ -820,10 +821,10 @@ export default function JobScreener({
           {/* Text paste area */}
           <div className="sk-card p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400">
+              <span className="font-mono text-[10px] uppercase tracking-eyebrow text-ink-faint dark:text-white/35">
                 {lang === "en" ? "Paste Offer Letter Text" : "ऑफर लेटर टेक्स्ट पेस्ट करें"}
               </span>
-              <span className="text-[10px] font-mono text-ink-faint dark:text-slate-600">
+              <span className="text-[10px] font-mono text-ink-faint dark:text-white/25">
                 {charCount.toLocaleString()} chars
               </span>
             </div>
@@ -834,25 +835,25 @@ export default function JobScreener({
                 ? "Paste the full text of the offer letter, email, or WhatsApp message here…"
                 : "यहाँ ऑफर लेटर, ईमेल या WhatsApp संदेश का पूरा टेक्स्ट पेस्ट करें…"}
               rows={10}
-              className="w-full px-3 py-2.5 text-sm border border-border dark:border-dark-border rounded-lg bg-surface dark:bg-dark-surface text-ink dark:text-white placeholder:text-ink-faint dark:placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-ink/20 dark:focus:ring-white/10 resize-none font-mono leading-relaxed"
+              className="w-full resize-none rounded-lg border border-rule bg-card px-3 py-2.5 font-mono text-[12.5px] leading-relaxed text-ink placeholder:text-ink-faint focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/10 dark:border-white/15 dark:bg-dark-surface dark:text-white dark:placeholder:text-white/25 dark:focus:border-white/40"
             />
             <button
               onClick={() => runScreen(inputText)}
               disabled={!inputText.trim() || mode === "loading"}
-              className="sk-btn-primary w-full"
+              className="sk-btn-primary w-full py-2 text-xs"
             >
-              <Search className="w-4 h-4" />
-              {lang === "en" ? "Screen This Offer Letter" : "इस ऑफर लेटर की जांच करें"}
+              <Search className="h-3.5 w-3.5" />
+              {lang === "en" ? "Screen this letter" : "इस पत्र की जाँच करें"}
             </button>
           </div>
 
           {/* File upload */}
           <div
             className={clsx(
-              "sk-card rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-3 cursor-pointer transition-all p-8",
+              "relative flex min-h-[120px] cursor-pointer flex-col items-center justify-center gap-2.5 rounded-xl border border-dashed px-4 py-6 transition-colors",
               dragActive
-                ? "border-ink bg-ink/5 dark:border-white dark:bg-white/5"
-                : "border-border dark:border-dark-border hover:border-ink-muted hover:bg-surface"
+                ? "border-accent bg-accent-bg/50 dark:border-accent"
+                : "border-rule-strong/80 bg-card/40 hover:border-ink-faint hover:bg-card dark:bg-white/[0.02] dark:hover:border-white/30 dark:hover:bg-white/[0.04]"
             )}
             onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
             onDragLeave={() => setDragActive(false)}
@@ -861,15 +862,15 @@ export default function JobScreener({
           >
             <input ref={fileInputRef} type="file" accept=".txt,.text" className="hidden"
               onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
-            <div className="w-12 h-12 rounded-xl bg-surface dark:bg-dark-border border border-border dark:border-dark-border flex items-center justify-center">
-              <Upload className="w-5 h-5 text-ink-muted dark:text-slate-400" />
+            <div className="grid h-9 w-9 place-items-center rounded-md border border-rule bg-card text-ink-muted dark:border-white/15 dark:bg-white/5 dark:text-white/45">
+              <Upload className="h-4 w-4" strokeWidth={1.7} />
             </div>
             <div className="text-center">
-              <p className="text-sm font-medium text-ink dark:text-white">
-                {lang === "en" ? "Drop a .txt offer letter file" : ".txt ऑफर लेटर फ़ाइल यहाँ छोड़ें"}
+              <p className="text-[13px] font-medium text-ink dark:text-white">
+                {lang === "en" ? "Drop a .txt letter, or click to choose" : ".txt पत्र यहाँ छोड़ें या क्लिक करें"}
               </p>
-              <p className="text-xs text-ink-muted dark:text-slate-500 mt-1">
-                {lang === "en" ? "Plain text files only — copy & paste works best for PDFs" : "केवल टेक्स्ट फ़ाइलें — PDF के लिए कॉपी-पेस्ट बेहतर है"}
+              <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-ink-faint dark:text-white/30">
+                {lang === "en" ? "plain text only — paste works better for PDFs" : "केवल टेक्स्ट — PDF के लिए पेस्ट बेहतर"}
               </p>
             </div>
           </div>
@@ -877,7 +878,7 @@ export default function JobScreener({
           {/* Advisory */}
           <div className="flex items-start gap-2.5 p-3 rounded-lg bg-warning-bg border border-warning/20">
             <Info className="w-4 h-4 text-warning shrink-0 mt-0.5" />
-            <p className="text-xs text-ink dark:text-slate-200 leading-relaxed">
+            <p className="text-xs text-ink dark:text-white/75 leading-relaxed">
               <span className="font-semibold">
                 {lang === "en" ? "Received a suspicious offer? " : "संदिग्ध ऑफर मिला? "}
               </span>
@@ -891,25 +892,26 @@ export default function JobScreener({
         {/* ── RIGHT: Results ── */}
         <div className="flex flex-col gap-4 overflow-y-auto">
           {mode === "idle" && (
-            <div className="flex flex-col items-center justify-center h-64 gap-4 text-center sk-card p-8">
-              <div className="w-16 h-16 rounded-2xl bg-surface dark:bg-dark-border border border-border dark:border-dark-border flex items-center justify-center">
-                <BriefcaseBusiness className="w-7 h-7 text-ink-faint dark:text-slate-500" />
-              </div>
-              <p className="font-semibold text-ink dark:text-white">
-                {lang === "en" ? "Awaiting offer letter" : "ऑफर लेटर की प्रतीक्षा"}
-              </p>
-              <p className="text-sm text-ink-muted dark:text-slate-400">
-                {lang === "en"
-                  ? "Select a demo case, paste the full text, or drop a .txt file."
-                  : "डेमो केस चुनें, टेक्स्ट पेस्ट करें या .txt फ़ाइल छोड़ें।"}
-              </p>
-            </div>
+            <AwaitingFindings
+              icon={BriefcaseBusiness}
+              title={lang === "en" ? "Nothing screened yet" : "अभी कोई जाँच नहीं"}
+              body={
+                lang === "en"
+                  ? "Load a reference letter, paste the text, or drop a file. Flags, evidence and a verdict appear here."
+                  : "संदर्भ पत्र खोलें, टेक्स्ट पेस्ट करें या फ़ाइल डालें। संकेत, साक्ष्य और निर्णय यहाँ आएँगे।"
+              }
+              steps={
+                lang === "en"
+                  ? ["No employer charges a fee to hire you", "Check the CIN against the MCA register", "A gmail address is not a company domain"]
+                  : ["कोई नियोक्ता नौकरी के पैसे नहीं लेता", "MCA रजिस्टर में CIN जाँचें", "gmail पता कंपनी का डोमेन नहीं होता"]
+              }
+            />
           )}
 
           {mode === "loading" && (
             <div className="flex flex-col items-center justify-center h-64 gap-3 sk-card p-8">
               <div className="w-8 h-8 border-2 border-ink dark:border-white border-t-transparent rounded-full animate-spin" />
-              <p className="text-sm text-ink-muted dark:text-slate-400">
+              <p className="text-sm text-ink-muted dark:text-white/45">
                 {lang === "en" ? "Running 5-layer forensic screen…" : "5-परत फॉरेंसिक स्क्रीन चल रही है…"}
               </p>
             </div>
@@ -927,17 +929,17 @@ export default function JobScreener({
                 <div className="flex items-center gap-4">
                   <RiskScoreRing score={result.riskScore} level={result.riskLevel} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400 mb-1.5">
+                    <p className="font-mono text-[10px] uppercase tracking-eyebrow text-ink-faint dark:text-white/35 mb-1.5">
                       {lang === "en" ? "Screening Verdict" : "स्क्रीनिंग निर्णय"}
                     </p>
                     <RiskBadge level={result.riskLevel} />
-                    <p className="text-xs text-ink-muted dark:text-slate-400 mt-1.5 font-mono">
+                    <p className="text-xs text-ink-muted dark:text-white/45 mt-1.5 font-mono">
                       {result.confidence}% confidence · {result.redFlags.length} flag{result.redFlags.length !== 1 ? "s" : ""} · {result.greenSignals.length} signal{result.greenSignals.length !== 1 ? "s" : ""}
                     </p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-[10px] text-ink-faint dark:text-slate-600">Screened at</p>
-                    <p className="text-[11px] font-mono text-ink-muted dark:text-slate-400">{result.timestamp}</p>
+                    <p className="text-[10px] text-ink-faint dark:text-white/25">Screened at</p>
+                    <p className="text-[11px] font-mono text-ink-muted dark:text-white/45">{result.timestamp}</p>
                   </div>
                 </div>
 
@@ -969,7 +971,7 @@ export default function JobScreener({
               {/* Extracted entities */}
               {Object.values(result.extractedEntities).some(Boolean) && (
                 <div className="sk-card p-4 space-y-3">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400">
+                  <span className="font-mono text-[10px] uppercase tracking-eyebrow text-ink-faint dark:text-white/35">
                     {lang === "en" ? "Extracted Entities" : "निकाली गई जानकारी"}
                   </span>
                   <div className="grid grid-cols-2 gap-2">
@@ -981,12 +983,12 @@ export default function JobScreener({
                       { icon: <IndianRupee className="w-3.5 h-3.5 text-ink-muted" />, label: "Salary Ref", val: result.extractedEntities.salary },
                       { icon: <IndianRupee className="w-3.5 h-3.5 text-ink-muted" />, label: "Fee Mention", val: result.extractedEntities.joiningFee },
                     ].filter(r => r.val).map(({ icon, label, val }) => (
-                      <div key={label} className="bg-surface dark:bg-dark-surface rounded-lg p-2.5 border border-border dark:border-dark-border">
+                      <div key={label} className="bg-paper-sunk dark:bg-white/[0.03] rounded-lg p-2.5 border border-rule dark:border-dark-border">
                         <div className="flex items-center gap-1 mb-1">
                           {icon}
-                          <span className="text-[10px] font-medium text-ink-faint dark:text-slate-600">{label}</span>
+                          <span className="text-[10px] font-medium text-ink-faint dark:text-white/25">{label}</span>
                         </div>
-                        <p className="sk-mono text-xs text-ink dark:text-slate-200 break-all">{val}</p>
+                        <p className="sk-mono text-xs text-ink dark:text-white/75 break-all">{val}</p>
                       </div>
                     ))}
                   </div>
@@ -998,7 +1000,7 @@ export default function JobScreener({
                 <div className="sk-card p-4 space-y-3">
                   <div className="flex items-center gap-2">
                     <XCircle className="w-4 h-4 text-fraud" />
-                    <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400">
+                    <span className="font-mono text-[10px] uppercase tracking-eyebrow text-ink-faint dark:text-white/35">
                       {lang === "en" ? `Red Flags (${result.redFlags.length})` : `चेतावनी संकेत (${result.redFlags.length})`}
                     </span>
                   </div>
@@ -1024,11 +1026,11 @@ export default function JobScreener({
                             </span>
                           </div>
                           {flag.matchedText && (
-                            <p className="sk-mono text-[10px] text-ink-muted dark:text-slate-400 mt-0.5 bg-surface dark:bg-dark-surface rounded px-2 py-0.5 inline-block max-w-full truncate border border-border dark:border-dark-border">
+                            <p className="sk-mono text-[10px] text-ink-muted dark:text-white/45 mt-0.5 bg-paper-sunk dark:bg-white/[0.03] rounded px-2 py-0.5 inline-block max-w-full truncate border border-rule dark:border-dark-border">
                               &ldquo;{flag.matchedText}&rdquo;
                             </p>
                           )}
-                          <p className="text-[11px] text-ink-muted dark:text-slate-400 mt-1 leading-relaxed">
+                          <p className="text-[11px] text-ink-muted dark:text-white/45 mt-1 leading-relaxed">
                             {flag.detail}
                           </p>
                         </div>
@@ -1047,7 +1049,7 @@ export default function JobScreener({
                   >
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-trust" />
-                      <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400">
+                      <span className="font-mono text-[10px] uppercase tracking-eyebrow text-ink-faint dark:text-white/35">
                         {lang === "en" ? `Clean Signals (${result.greenSignals.length})` : `स्वच्छ संकेत`}
                       </span>
                     </div>
@@ -1061,7 +1063,7 @@ export default function JobScreener({
                             <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                             {s.label}
                           </p>
-                          <p className="text-[11px] text-ink-muted dark:text-slate-400 ml-5">{s.detail}</p>
+                          <p className="text-[11px] text-ink-muted dark:text-white/45 ml-5">{s.detail}</p>
                         </li>
                       ))}
                     </ul>

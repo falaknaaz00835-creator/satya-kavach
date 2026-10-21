@@ -338,15 +338,15 @@ function RailButton({
       title={title ?? label}
       aria-current={active ? "page" : undefined}
       className={clsx(
-        "group relative flex w-[64px] flex-col items-center gap-1 rounded-md py-2 transition-colors duration-150",
+        "group relative flex w-[56px] flex-col items-center gap-1 rounded-md py-2 transition-all duration-200",
         active
-          ? "text-ink dark:text-white"
+          ? "bg-ink text-paper shadow-card dark:bg-white/10 dark:text-white"
           : "text-ink-faint hover:bg-paper-sunk/70 hover:text-ink dark:text-white/35 dark:hover:bg-white/5 dark:hover:text-white"
       )}
     >
       <span
         className={clsx(
-          "absolute left-[-8px] top-1/2 h-5 w-[2px] -translate-y-1/2 rounded-full bg-accent transition-opacity duration-200",
+          "absolute left-[-12px] top-1/2 h-6 w-[3px] -translate-y-1/2 rounded-full bg-accent transition-opacity duration-200",
           active ? "opacity-100" : "opacity-0"
         )}
       />

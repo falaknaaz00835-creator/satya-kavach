@@ -44,16 +44,16 @@ module.exports = {
         "dark-border":  "#33322C",
       },
       fontFamily: {
-        sans:    ["Inter", "ui-sans-serif", "system-ui", "sans-serif"],
-        display: ["Fraunces", "Iowan Old Style", "Georgia", "serif"],
-        serif:   ["Fraunces", "Iowan Old Style", "Georgia", "serif"],
-        mono:    ["JetBrains Mono", "IBM Plex Mono", "ui-monospace", "monospace"],
+        sans:    ["Inter", "Noto Sans Devanagari", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["Fraunces", "Noto Serif Devanagari", "Iowan Old Style", "Georgia", "serif"],
+        serif:   ["Fraunces", "Noto Serif Devanagari", "Iowan Old Style", "Georgia", "serif"],
+        mono:    ["JetBrains Mono", "Noto Sans Devanagari", "IBM Plex Mono", "ui-monospace", "monospace"],
       },
       fontSize: {
         "2xs": ["10px", { lineHeight: "14px" }],
       },
       letterSpacing: {
-        eyebrow: "0.18em",
+        eyebrow: "0.14em",
         tightest: "-0.03em",
       },
       borderRadius: {

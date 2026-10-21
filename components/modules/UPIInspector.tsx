@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import RealTimeGroundingCard from "@/components/RealTimeGroundingCard";
 import { takeIntake } from "@/lib/intake";
+import { InstrumentHeader, AwaitingFindings } from "@/components/instrument";
 import { computeSHA256, validateUTR as validateUTRAlgorithmic } from "@/lib/real-forensics";
 
 /* ─────────────────────────────────────────
@@ -270,47 +271,60 @@ const SAMPLE_CASES: SampleCase[] = [
    Programmatic SVG thumbnails for samples
 ───────────────────────────────────────── */
 function SampleThumbnail({ type }: { type: SampleCase["svgType"] }) {
-  if (type === "genuine") {
-    return (
-      <svg viewBox="0 0 120 80" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-        <rect width="120" height="80" rx="4" fill="#ECFDF5" />
-        <rect x="10" y="8" width="100" height="12" rx="2" fill="#D1FAE5" />
-        <text x="60" y="18" textAnchor="middle" fontSize="7" fill="#059669" fontWeight="600">PhonePe</text>
-        <circle cx="60" cy="38" r="10" fill="#059669" />
-        <path d="M55 38 L58 41 L66 34" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-        <text x="60" y="56" textAnchor="middle" fontSize="8" fill="#0F172A" fontWeight="700">₹1,500.00</text>
-        <text x="60" y="66" textAnchor="middle" fontSize="5" fill="#64748B">UTR: 420736185294</text>
-        <text x="60" y="74" textAnchor="middle" fontSize="5" fill="#059669">Payment Successful</text>
-      </svg>
-    );
-  }
-  if (type === "edited") {
-    return (
-      <svg viewBox="0 0 120 80" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-        <rect width="120" height="80" rx="4" fill="#FEF2F2" />
-        <rect x="10" y="8" width="100" height="12" rx="2" fill="#FECACA" />
-        <text x="60" y="18" textAnchor="middle" fontSize="7" fill="#DC2626" fontWeight="600">Google Pay</text>
-        <circle cx="60" cy="38" r="10" fill="#059669" />
-        <path d="M55 38 L58 41 L66 34" stroke="white" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-        {/* Edited amount — slightly different fill to show tampering */}
-        <rect x="28" y="50" width="64" height="10" rx="2" fill="#FECACA" opacity="0.4" />
-        <text x="60" y="58" textAnchor="middle" fontSize="8" fill="#DC2626" fontWeight="700">₹1,50,000.00</text>
-        <text x="60" y="68" textAnchor="middle" fontSize="5" fill="#64748B">UTR: 312049873561</text>
-        <text x="60" y="76" textAnchor="middle" fontSize="4" fill="#DC2626">⚠ Amount edited</text>
-      </svg>
-    );
-  }
-  // fake
+  const app = type === "genuine" ? "PhonePe" : type === "edited" ? "Google Pay" : "FakeUPI";
+  const amount = type === "edited" ? "₹1,50,000.00" : type === "fake" ? "₹50,000.00" : "₹1,500.00";
+  const utr = type === "genuine" ? "420736185294" : type === "edited" ? "312049873561" : "7XT9-FAKE-00";
+  const accent = type === "genuine" ? "#12715B" : "#B3382B";
+  const honest = type === "genuine";
+
   return (
-    <svg viewBox="0 0 120 80" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-      <rect width="120" height="80" rx="4" fill="#FEF2F2" />
-      <rect x="10" y="8" width="100" height="12" rx="2" fill="#FECACA" />
-      <text x="60" y="18" textAnchor="middle" fontSize="7" fill="#DC2626" fontWeight="600">FakeUPI-App</text>
-      <circle cx="60" cy="36" r="10" fill="#9CA3AF" />
-      <text x="60" y="40" textAnchor="middle" fontSize="8" fill="white" fontWeight="600">?</text>
-      <text x="60" y="56" textAnchor="middle" fontSize="8" fill="#DC2626" fontWeight="700">₹50,000.00</text>
-      <text x="60" y="66" textAnchor="middle" fontSize="5" fill="#64748B">UTR: 7XT9-FAKE-00</text>
-      <text x="60" y="74" textAnchor="middle" fontSize="4" fill="#DC2626">Invalid PSP · Fake Generator</text>
+    <svg viewBox="0 0 96 120" className="h-full w-full" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+      <rect width="96" height="120" rx="5" fill="#FFFDF8" stroke="#E4DED0" />
+      {/* device status bar */}
+      <text x="8" y="9" fontSize="4" fill="#8A8A7D" fontFamily="monospace">9:41</text>
+      <rect x="70" y="5" width="18" height="4" rx="1" fill="#E4DED0" />
+      {/* app bar */}
+      <rect x="0" y="14" width="96" height="12" fill={honest ? "#12715B" : "#B3382B"} opacity="0.9" />
+      <text x="48" y="22.5" textAnchor="middle" fontSize="6" fill="#FFFDF8" fontWeight="600" fontFamily="monospace">
+        {app}
+      </text>
+      {/* status tick */}
+      <circle cx="48" cy="42" r="9" fill={honest ? "#E7F2ED" : "#FAEAE6"} />
+      <circle cx="48" cy="42" r="6" fill={accent} opacity={honest ? 1 : 0.85} />
+      <path d="M45 42.2 L47.2 44.4 L51.4 40" stroke="#FFFDF8" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      {/* amount */}
+      {type === "edited" && (
+        <rect x="12" y="55" width="72" height="12" rx="2" fill="none" stroke={accent} strokeWidth="0.8" strokeDasharray="2 2" />
+      )}
+      <text
+        x="48"
+        y="64"
+        textAnchor="middle"
+        fontSize="9"
+        fill={honest ? "#14140F" : accent}
+        fontWeight="700"
+      >
+        {amount}
+      </text>
+      <text x="48" y="74" textAnchor="middle" fontSize="4.6" fill="#8A8A7D">
+        {honest ? "Payment successful" : type === "edited" ? "Amount edited" : "Generated, not paid"}
+      </text>
+      {/* receipt rule */}
+      <rect x="12" y="80" width="72" height="0.6" fill="#E4DED0" />
+      {/* detail rows */}
+      <text x="12" y="88" fontSize="4" fill="#8A8A7D" fontFamily="monospace">UTR</text>
+      <text x="84" y="88" textAnchor="end" fontSize="4" fill={honest ? "#14140F" : accent} fontFamily="monospace">
+        {utr}
+      </text>
+      <text x="12" y="96" fontSize="4" fill="#8A8A7D" fontFamily="monospace">VPA</text>
+      <text x="84" y="96" textAnchor="end" fontSize="4" fill="#14140F" fontFamily="monospace">
+        {honest ? "shop@ybl" : "merchant@paytm"}
+      </text>
+      {/* verdict strip */}
+      <rect x="12" y="103" width="72" height="10" rx="2" fill={accent} opacity="0.1" />
+      <text x="48" y="110" textAnchor="middle" fontSize="4.2" fill={accent} fontFamily="monospace" letterSpacing="0.4">
+        {honest ? "VERIFIED SAMPLE" : "TAMPERED SAMPLE"}
+      </text>
     </svg>
   );
 }
@@ -350,7 +364,7 @@ function ELAScoreBar({ score }: { score: number }) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between text-xs">
-        <span className="text-ink-muted dark:text-slate-400 font-medium">ELA Tampering Score</span>
+        <span className="text-ink-muted dark:text-white/45 font-medium">ELA Tampering Score</span>
         <span className={clsx("font-mono font-bold", score < 20 ? "text-trust" : score < 50 ? "text-warning" : "text-fraud")}>
           {score}/100 — {label}
         </span>
@@ -650,28 +664,25 @@ export default function UPIInspector({
   };
 
   return (
-    <div className="p-6 h-full">
-      {/* ── Page header ── */}
-      <div className="mb-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="font-display text-[22px] leading-tight text-ink dark:text-white">
-              {lang === "en" ? "UPI Payment Screenshot Inspector" : "UPI भुगतान स्क्रीनशॉट जांचकर्ता"}
-            </h1>
-            <p className="text-sm text-ink-muted dark:text-slate-400 mt-1">
-              {lang === "en"
-                ? "Canvas ELA · UTR Validator · UPI Handle Authenticator · Font Inspector"
-                : "कैनवास ELA · UTR वैलिडेटर · UPI हैंडल ऑथेंटिकेटर · फॉन्ट इंस्पेक्टर"}
-            </p>
-          </div>
-          {mode === "done" && (
-            <button onClick={reset} className="sk-btn-ghost text-xs gap-1.5">
+    <div className="mx-auto w-full max-w-[1280px] px-5 pb-24 pt-6 sm:px-8">
+      <InstrumentHeader
+        no="01"
+        note={lang === "en" ? "Screenshot forensics" : "स्क्रीनशॉट फॉरेंसिक"}
+        title={lang === "en" ? "UPI payment screenshot" : "UPI भुगतान स्क्रीनशॉट"}
+        methods={
+          lang === "en"
+            ? "Error level analysis · NPCI UTR check · PSP registry · font metrics"
+            : "ELA · NPCI UTR जाँच · PSP रजिस्ट्री · फॉन्ट मेट्रिक्स"
+        }
+        actions={
+          mode === "done" ? (
+            <button onClick={reset} className="sk-btn-ghost gap-1.5 px-3 py-2 text-xs">
               <RefreshCcw className="w-3.5 h-3.5" />
-              {lang === "en" ? "New Scan" : "नई जांच"}
+              {lang === "en" ? "New inspection" : "नई जाँच"}
             </button>
-          )}
-        </div>
-      </div>
+          ) : null
+        }
+      />
 
       {/* ── Split-pane workbench ── */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 h-[calc(100%-80px)]">
@@ -679,38 +690,45 @@ export default function UPIInspector({
         <div className="flex flex-col gap-5 min-h-0">
           {/* Sample cases */}
           <div className="sk-card p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Zap className="w-4 h-4 text-warning" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400">
-                {lang === "en" ? "1-Click Live Demo Cases" : "1-क्लिक डेमो केस"}
+            <div className="mb-1 flex items-baseline justify-between gap-3">
+              <span className="font-mono text-[10px] uppercase tracking-eyebrow text-ink-faint dark:text-white/35">
+                {lang === "en" ? "Reference cases" : "संदर्भ केस"}
+              </span>
+              <span className="hidden font-mono text-[9px] uppercase tracking-wider text-ink-faint/80 sm:block dark:text-white/20">
+                {lang === "en" ? "load one to see the method" : "तरीका देखने के लिए एक खोलें"}
               </span>
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="divide-y divide-rule/80 dark:divide-white/10">
               {SAMPLE_CASES.map((sample) => (
                 <button
                   key={sample.id}
                   onClick={() => loadSample(sample)}
                   className={clsx(
-                    "rounded-lg border-2 p-2 text-left transition-all duration-150 hover:shadow-card-hover group",
-                    activeSample === sample.id
-                      ? sample.verdict === "genuine"
-                        ? "border-trust"
-                        : "border-fraud"
-                      : "border-border dark:border-dark-border hover:border-ink-muted"
+                    "flex w-full items-center gap-3 py-2.5 text-left transition-opacity",
+                    activeSample === sample.id ? "opacity-100" : "opacity-90 hover:opacity-100"
                   )}
                 >
-                  <div className="aspect-video rounded-md overflow-hidden mb-2 bg-surface dark:bg-dark-border">
+                  <span
+                    className={clsx(
+                      "h-14 w-11 shrink-0 overflow-hidden rounded border bg-card transition-colors dark:bg-white/[0.06]",
+                      activeSample === sample.id
+                        ? sample.verdict === "genuine"
+                          ? "border-trust"
+                          : "border-fraud"
+                        : "border-rule dark:border-white/15"
+                    )}
+                  >
                     <SampleThumbnail type={sample.svgType} />
-                  </div>
-                  <p className="text-[11px] font-semibold text-ink dark:text-white leading-tight">
-                    {lang === "en" ? sample.label : sample.labelHi}
-                  </p>
-                  <p className="text-[10px] text-ink-muted dark:text-slate-500 mt-0.5 leading-tight">
-                    {lang === "en" ? sample.description : sample.descriptionHi}
-                  </p>
-                  <div className="mt-1.5">
-                    <VerdictBadge verdict={sample.verdict} />
-                  </div>
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[12.5px] font-medium text-ink dark:text-white/90">
+                      {lang === "en" ? sample.label : sample.labelHi}
+                    </span>
+                    <span className="mt-0.5 hidden truncate text-[11px] text-ink-muted sm:block dark:text-white/35">
+                      {lang === "en" ? sample.description : sample.descriptionHi}
+                    </span>
+                  </span>
+                  <VerdictBadge verdict={sample.verdict} />
                 </button>
               ))}
             </div>
@@ -718,12 +736,12 @@ export default function UPIInspector({
 
           {/* Manual input fields */}
           <div className="sk-card p-4 space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400">
+            <p className="font-mono text-[10px] uppercase tracking-eyebrow text-ink-faint dark:text-white/35">
               {lang === "en" ? "Manual Field Entry (Optional)" : "मैन्युअल फ़ील्ड प्रविष्टि"}
             </p>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-[11px] font-medium text-ink-muted dark:text-slate-400 block mb-1">
+                <label className="text-[11px] font-medium text-ink-muted dark:text-white/45 block mb-1">
                   {lang === "en" ? "UTR Number" : "UTR नंबर"}
                 </label>
                 <input
@@ -731,15 +749,15 @@ export default function UPIInspector({
                   value={utrInput}
                   onChange={(e) => setUtrInput(e.target.value.trim())}
                   placeholder="e.g. 420736185294"
-                  className="w-full px-3 py-2 text-sm font-mono border border-border dark:border-dark-border rounded-lg bg-surface dark:bg-dark-surface text-ink dark:text-white placeholder:text-ink-faint dark:placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-ink/20 dark:focus:ring-white/10"
+                  className="w-full px-3 py-2 text-sm font-mono border border-rule dark:border-dark-border rounded-lg bg-paper-sunk dark:bg-white/[0.03] text-ink dark:text-white placeholder:text-ink-faint dark:placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-ink/20 dark:focus:ring-white/10"
                   maxLength={14}
                 />
-                <p className="text-[10px] text-ink-faint dark:text-slate-600 mt-0.5">
+                <p className="text-[10px] text-ink-faint dark:text-white/25 mt-0.5">
                   12-digit NPCI reference
                 </p>
               </div>
               <div>
-                <label className="text-[11px] font-medium text-ink-muted dark:text-slate-400 block mb-1">
+                <label className="text-[11px] font-medium text-ink-muted dark:text-white/45 block mb-1">
                   {lang === "en" ? "UPI ID" : "UPI ID"}
                 </label>
                 <input
@@ -747,9 +765,9 @@ export default function UPIInspector({
                   value={upiInput}
                   onChange={(e) => setUpiInput(e.target.value.trim())}
                   placeholder="e.g. user@ybl"
-                  className="w-full px-3 py-2 text-sm font-mono border border-border dark:border-dark-border rounded-lg bg-surface dark:bg-dark-surface text-ink dark:text-white placeholder:text-ink-faint dark:placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-ink/20 dark:focus:ring-white/10"
+                  className="w-full px-3 py-2 text-sm font-mono border border-rule dark:border-dark-border rounded-lg bg-paper-sunk dark:bg-white/[0.03] text-ink dark:text-white placeholder:text-ink-faint dark:placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-ink/20 dark:focus:ring-white/10"
                 />
-                <p className="text-[10px] text-ink-faint dark:text-slate-600 mt-0.5">
+                <p className="text-[10px] text-ink-faint dark:text-white/25 mt-0.5">
                   VPA from the screenshot
                 </p>
               </div>
@@ -759,10 +777,10 @@ export default function UPIInspector({
           {/* File dropzone */}
           <div
             className={clsx(
-              "flex-1 sk-card rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-3 cursor-pointer transition-all duration-150 min-h-[160px]",
+              "relative flex min-h-[136px] flex-1 cursor-pointer flex-col items-center justify-center gap-2.5 rounded-xl border border-dashed px-4 py-6 transition-colors duration-150",
               dragActive
-                ? "border-ink bg-ink/5 dark:border-white dark:bg-white/5"
-                : "border-border dark:border-dark-border hover:border-ink-muted hover:bg-surface dark:hover:border-slate-500"
+                ? "border-accent bg-accent-bg/50 dark:border-accent"
+                : "border-rule-strong/80 bg-card/40 hover:border-ink-faint hover:bg-card dark:bg-white/[0.02] dark:hover:border-white/30 dark:hover:bg-white/[0.04]"
             )}
             onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
             onDragLeave={() => setDragActive(false)}
@@ -782,7 +800,7 @@ export default function UPIInspector({
             {mode === "loading" ? (
               <div className="flex flex-col items-center gap-2">
                 <div className="w-8 h-8 border-2 border-ink dark:border-white border-t-transparent rounded-full animate-spin" />
-                <p className="text-sm text-ink-muted dark:text-slate-400">
+                <p className="text-sm text-ink-muted dark:text-white/45">
                   {lang === "en" ? "Running forensic analysis…" : "फॉरेंसिक विश्लेषण हो रहा है…"}
                 </p>
               </div>
@@ -805,15 +823,15 @@ export default function UPIInspector({
               </div>
             ) : (
               <>
-                <div className="w-12 h-12 rounded-xl bg-surface dark:bg-dark-border border border-border dark:border-dark-border flex items-center justify-center">
-                  <Upload className="w-5 h-5 text-ink-muted dark:text-slate-400" />
+                <div className="grid h-10 w-10 place-items-center rounded-md border border-rule bg-card text-ink-muted dark:border-white/15 dark:bg-white/5 dark:text-white/45">
+                  <Upload className="h-4 w-4" strokeWidth={1.7} />
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-medium text-ink dark:text-white">
-                    {lang === "en" ? "Drop screenshot here or click to upload" : "स्क्रीनशॉट यहाँ छोड़ें या क्लिक करें"}
+                  <p className="text-[13px] font-medium text-ink dark:text-white">
+                    {lang === "en" ? "Drop the screenshot, or click to choose" : "स्क्रीनशॉट यहाँ छोड़ें या क्लिक करें"}
                   </p>
-                  <p className="text-xs text-ink-muted dark:text-slate-500 mt-1">
-                    PNG, JPG, WebP — max 10 MB
+                  <p className="mt-1 font-mono text-[10px] uppercase tracking-wider text-ink-faint dark:text-white/30">
+                    PNG · JPG · WEBP — max 10 MB
                   </p>
                 </div>
               </>
@@ -824,21 +842,20 @@ export default function UPIInspector({
         {/* ── RIGHT PANE: Forensic breakdown ── */}
         <div className="flex flex-col gap-4 min-h-0 overflow-y-auto">
           {mode === "idle" && (
-            <div className="flex flex-col items-center justify-center h-full gap-4 text-center p-8">
-              <div className="w-16 h-16 rounded-2xl bg-surface dark:bg-dark-border border border-border dark:border-dark-border flex items-center justify-center">
-                <Eye className="w-7 h-7 text-ink-faint dark:text-slate-500" />
-              </div>
-              <div>
-                <p className="font-semibold text-ink dark:text-white">
-                  {lang === "en" ? "No scan running" : "कोई जांच नहीं"}
-                </p>
-                <p className="text-sm text-ink-muted dark:text-slate-400 mt-1">
-                  {lang === "en"
-                    ? "Select a demo case from the left, or upload a real screenshot to begin forensic analysis."
-                    : "बाएं से डेमो केस चुनें या असली स्क्रीनशॉट अपलोड करें।"}
-                </p>
-              </div>
-            </div>
+            <AwaitingFindings
+              icon={Eye}
+              title={lang === "en" ? "Nothing inspected yet" : "अभी कोई जाँच नहीं"}
+              body={
+                lang === "en"
+                  ? "Pick a reference case or drop the screenshot you were sent. Findings, evidence and a verdict appear here."
+                  : "संदर्भ केस चुनें या भेजा गया स्क्रीनशॉट डालें। निष्कर्ष, साक्ष्य और निर्णय यहाँ दिखेंगे।"
+              }
+              steps={
+                lang === "en"
+                  ? ["Load a reference case to see the method", "Drop the screenshot from WhatsApp", "Enter UTR and VPA for registry checks"]
+                  : ["तरीका देखने के लिए संदर्भ केस खोलें", "व्हाट्सएप का स्क्रीनशॉट डालें", "रजिस्ट्री जाँच के लिए UTR व VPA भरें"]
+              }
+            />
           )}
 
           {mode === "done" && result && (
@@ -854,21 +871,21 @@ export default function UPIInspector({
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400 mb-1">
+                    <p className="font-mono text-[10px] uppercase tracking-eyebrow text-ink-faint dark:text-white/35 mb-1">
                       {lang === "en" ? "Forensic Verdict" : "फॉरेंसिक निर्णय"}
                     </p>
                     <div className="flex items-center gap-3">
                       <VerdictBadge verdict={result.verdict} />
-                      <span className="text-sm text-ink-muted dark:text-slate-400 font-mono">
+                      <span className="text-sm text-ink-muted dark:text-white/45 font-mono">
                         {result.confidence}% confidence
                       </span>
                     </div>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-[10px] text-ink-faint dark:text-slate-600">Scanned at</p>
-                    <p className="text-xs font-mono text-ink-muted dark:text-slate-400">{result.timestamp}</p>
+                    <p className="text-[10px] text-ink-faint dark:text-white/25">Scanned at</p>
+                    <p className="text-xs font-mono text-ink-muted dark:text-white/45">{result.timestamp}</p>
                     {result.sha256 && (
-                      <p className="text-[9px] font-mono text-emerald-600 dark:text-emerald-400 mt-1 max-w-[180px] truncate">
+                      <p className="text-[9px] font-mono text-trust mt-1 max-w-[180px] truncate">
                         SHA: {result.sha256}
                       </p>
                     )}
@@ -878,14 +895,14 @@ export default function UPIInspector({
 
               {/* UTR + UPI Handle */}
               <div className="sk-card p-4 space-y-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400">
+                <p className="font-mono text-[10px] uppercase tracking-eyebrow text-ink-faint dark:text-white/35">
                   {lang === "en" ? "Reference Validation" : "संदर्भ सत्यापन"}
                 </p>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 rounded-lg bg-surface dark:bg-dark-surface border border-border dark:border-dark-border">
+                  <div className="p-3 rounded-lg bg-paper-sunk dark:bg-white/[0.03] border border-rule dark:border-dark-border">
                     <div className="flex items-center gap-1.5 mb-1.5">
                       <Hash className="w-3.5 h-3.5 text-ink-muted" />
-                      <span className="text-[11px] font-semibold text-ink-muted dark:text-slate-400">UTR Number</span>
+                      <span className="text-[11px] font-semibold text-ink-muted dark:text-white/45">UTR Number</span>
                     </div>
                     <p className="sk-mono text-ink dark:text-white break-all">{result.utrValue}</p>
                     <div className="mt-1.5">
@@ -896,15 +913,15 @@ export default function UPIInspector({
                       )}
                     </div>
                   </div>
-                  <div className="p-3 rounded-lg bg-surface dark:bg-dark-surface border border-border dark:border-dark-border">
+                  <div className="p-3 rounded-lg bg-paper-sunk dark:bg-white/[0.03] border border-rule dark:border-dark-border">
                     <div className="flex items-center gap-1.5 mb-1.5">
                       <AlignLeft className="w-3.5 h-3.5 text-ink-muted" />
-                      <span className="text-[11px] font-semibold text-ink-muted dark:text-slate-400">UPI Handle</span>
+                      <span className="text-[11px] font-semibold text-ink-muted dark:text-white/45">UPI Handle</span>
                     </div>
                     {result.upiHandle ? (
                       <>
                         <p className="sk-mono text-ink dark:text-white break-all">{result.upiHandle.handle}</p>
-                        <p className="text-[10px] text-ink-muted dark:text-slate-400 mt-0.5">{result.upiHandle.bank}</p>
+                        <p className="text-[10px] text-ink-muted dark:text-white/45 mt-0.5">{result.upiHandle.bank}</p>
                         <div className="mt-1.5">
                           {result.upiHandle.trusted ? (
                             <span className="sk-badge-trust"><CheckCircle2 className="w-3 h-3" /> Registered PSP</span>
@@ -914,7 +931,7 @@ export default function UPIInspector({
                         </div>
                       </>
                     ) : (
-                      <p className="text-xs text-ink-muted dark:text-slate-400">Not provided</p>
+                      <p className="text-xs text-ink-muted dark:text-white/45">Not provided</p>
                     )}
                   </div>
                 </div>
@@ -937,7 +954,7 @@ export default function UPIInspector({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Layers className="w-4 h-4 text-ink-muted" />
-                    <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400">
+                    <span className="font-mono text-[10px] uppercase tracking-eyebrow text-ink-faint dark:text-white/35">
                       {lang === "en" ? "Error Level Analysis (ELA)" : "ELA पिक्सेल जांच"}
                     </span>
                   </div>
@@ -948,23 +965,23 @@ export default function UPIInspector({
                         "text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors",
                         showELA
                           ? "border-ink bg-ink text-white dark:border-white dark:bg-white dark:text-dark-surface"
-                          : "border-border dark:border-dark-border text-ink-muted dark:text-slate-400 hover:text-ink dark:hover:text-white"
+                          : "border-rule dark:border-dark-border text-ink-muted dark:text-white/45 hover:text-ink dark:hover:text-white"
                       )}
                     >
                       {showELA ? "Hide ELA Heatmap" : "Show ELA Heatmap"}
                     </button>
                   )}
                   {activeSample && (
-                    <span className="text-[10px] text-ink-faint dark:text-slate-600 italic">
+                    <span className="text-[10px] text-ink-faint dark:text-white/25 italic">
                       (Simulated for demo)
                     </span>
                   )}
                 </div>
                 <ELAScoreBar score={result.elaScore} />
                 {showELA && !activeSample && (
-                  <div className="flex items-center gap-2 p-2 rounded-lg bg-surface dark:bg-dark-surface border border-border dark:border-dark-border">
+                  <div className="flex items-center gap-2 p-2 rounded-lg bg-paper-sunk dark:bg-white/[0.03] border border-rule dark:border-dark-border">
                     <Info className="w-3.5 h-3.5 text-ink-muted shrink-0" />
-                    <p className="text-[10px] text-ink-muted dark:text-slate-400">
+                    <p className="text-[10px] text-ink-muted dark:text-white/45">
                       Heatmap overlaid on image — red/bright zones indicate pixel editing activity.
                     </p>
                   </div>
@@ -976,13 +993,13 @@ export default function UPIInspector({
                 <div className="sk-card p-4 space-y-2">
                   <div className="flex items-center gap-2">
                     <AlignLeft className="w-4 h-4 text-warning" />
-                    <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400">
+                    <span className="font-mono text-[10px] uppercase tracking-eyebrow text-ink-faint dark:text-white/35">
                       {lang === "en" ? "Font & Layout Anomalies" : "फॉन्ट एवं लेआउट विसंगतियाँ"}
                     </span>
                   </div>
                   <ul className="space-y-1.5">
                     {result.fontAnomalies.map((a, i) => (
-                      <li key={i} className="flex items-start gap-2 text-xs text-ink dark:text-slate-200">
+                      <li key={i} className="flex items-start gap-2 text-xs text-ink dark:text-white/75">
                         <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0 mt-0.5" />
                         {a}
                       </li>
@@ -999,7 +1016,7 @@ export default function UPIInspector({
                 >
                   <div className="flex items-center gap-2">
                     <Eye className="w-4 h-4 text-ink-muted" />
-                    <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400">
+                    <span className="font-mono text-[10px] uppercase tracking-eyebrow text-ink-faint dark:text-white/35">
                       {lang === "en" ? "Evidence Checklist" : "साक्ष्य सूची"} ({result.evidencePoints.length})
                     </span>
                   </div>
@@ -1012,8 +1029,8 @@ export default function UPIInspector({
                 {showFullEvidence && (
                   <ol className="space-y-2 mt-2">
                     {result.evidencePoints.map((pt, i) => (
-                      <li key={i} className="flex items-start gap-2.5 text-xs text-ink dark:text-slate-200">
-                        <span className="font-mono font-bold text-ink-faint dark:text-slate-600 shrink-0 w-4">
+                      <li key={i} className="flex items-start gap-2.5 text-xs text-ink dark:text-white/75">
+                        <span className="font-mono font-bold text-ink-faint dark:text-white/25 shrink-0 w-4">
                           {String(i + 1).padStart(2, "0")}
                         </span>
                         {pt}
@@ -1055,8 +1072,8 @@ export default function UPIInspector({
       {/* ── Cyber Cell Modal ── */}
       {showCyberModal && cyberCellData && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/50 backdrop-blur-xs">
-          <div className="bg-card dark:bg-dark-card border border-border dark:border-dark-border rounded-xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-border dark:border-dark-border pb-3">
+          <div className="bg-card dark:bg-dark-card border border-rule dark:border-dark-border rounded-xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-rule dark:border-dark-border pb-3">
               <div className="flex items-center gap-2">
                 <ShieldAlert className="w-5 h-5 text-red-600" />
                 <h3 className="font-bold text-sm text-ink dark:text-white">
@@ -1085,7 +1102,7 @@ export default function UPIInspector({
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-semibold text-ink-muted dark:text-slate-400">
+                <label className="text-xs font-semibold text-ink-muted dark:text-white/45">
                   Official Police Complaint Draft (Ready to Submit)
                 </label>
                 <button
@@ -1104,12 +1121,12 @@ export default function UPIInspector({
                 readOnly
                 value={cyberCellData.formalPoliceNarrative}
                 rows={10}
-                className="w-full text-xs font-mono p-3 rounded-lg border border-border dark:border-dark-border bg-surface dark:bg-dark-surface text-ink dark:text-white resize-none"
+                className="w-full text-xs font-mono p-3 rounded-lg border border-rule dark:border-dark-border bg-paper-sunk dark:bg-white/[0.03] text-ink dark:text-white resize-none"
               />
             </div>
 
             <div className="flex items-center justify-between pt-2">
-              <span className="text-[11px] font-mono text-ink-faint dark:text-slate-500">
+              <span className="text-[11px] font-mono text-ink-faint dark:text-white/35">
                 Ref Code: {cyberCellData.acknowledgementCode}
               </span>
               <div className="flex gap-2">

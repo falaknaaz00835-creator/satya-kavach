@@ -1,6 +1,6 @@
 # SatyaKavach — Frontend Direction
 
-**Status:** Design System 2.0 shipped on this branch
+**Status:** Design System 2.0 shipped on this branch · modules re-skinned in the second pass
 **Scope:** UI/UX critique, the changes already made, and the features that would take this from "hackathon demo" to a product a cyber-cell or a bank would actually deploy.
 
 ---
@@ -72,6 +72,26 @@ Paper, ink, hairline rules, mono metadata, serif headlines, stamped verdicts, nu
 - Ledger rows in modules now pass their verdict up, so the ledger says *what* was found, not just *that* something ran.
 
 ---
+
+### 2.5 Second pass — the modules were still the old app
+
+The first pass rebuilt the shell but left the five instrument pages wearing the previous visual language. That is where most of the "still looks off" feel came from. Fixed:
+
+| Problem | Fix |
+|---|---|
+| Module headers were generic `h1 + subtitle` blocks, each with a different size | One `InstrumentHeader`: `Instrument 0N` eyebrow in vermillion, editorial serif title, method line in mono — identical grammar on all five |
+| Empty right panes said "No scan running" over a floating icon | `AwaitingFindings`: a dashed intake frame with corner ticks, a serif line, and **three real rules of thumb** (e.g. "No employer charges a fee to hire you") — the empty state now teaches |
+| Demo cases were a grid of bordered cards with emoji-ish glyphs | Stacked reference **rows** with a small receipt/QR thumbnail, verdict stamp on the right, hairline dividers. Reads like a case file, scans in one pass |
+| Thumbnails looked like clip-art blocks | Redrawn as receipts: status bar, app bar, tick, amount, UTR/VPA rows, verdict strip. Deterministic QR art (no `Math.random`, so SSR and client agree) |
+| Emerald / indigo / slate leftovers (`text-emerald-600`, `bg-indigo-100`, 60+ raw slate classes) | Swept to the paper palette: trust / warning / fraud / rule / ink |
+| Raw `border` tokens and `bg-surface` inside modules | `rule`, `paper`, `card`, `ink` — the same tokens as the shell |
+| Disabled buttons rendered as a grey slab | Disabled = transparent fill, hairline border, muted label. Reads as "not yet", not "broken" |
+| Hindi headlines rendered as tofu boxes | Fraunces has no Devanagari. Added **Noto Serif Devanagari** as the display fallback and Noto Sans Devanagari in the body/mono stacks |
+| Fonts came from the Google CDN (offline failure, wrong metrics) | All five faces self-hosted in `/public/fonts`, preloaded, `font-display: swap`, subset to the glyphs used |
+| Deepfake and Document pages were one long single column | Two-column desk on every instrument: input + references left, findings right |
+| Mobile: floating launcher covered the desk stats, long copy wrapped in 3pt mono | Launcher collapses to a 40px round FAB under `sm`; reference descriptions and hints hide below `sm` |
+
+Also added: a ruled-canvas texture on the desk background (masked, 2.6% alpha) and tighter eyebrow tracking, both to break the flat-vector look.
 
 ## 3. What to build next
 

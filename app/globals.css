@@ -1,4 +1,51 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..600&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+/* ═══════════════════════════════════════════════════════════
+   Type, self-hosted. No CDN round-trip, works offline.
+   ═══════════════════════════════════════════════════════════ */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('/fonts/inter-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Fraunces';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('/fonts/fraunces-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Fraunces';
+  font-style: italic;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('/fonts/fraunces-latin-italic.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 800;
+  src: url('/fonts/jetbrains-mono-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Noto Serif Devanagari';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('/fonts/noto-serif-devanagari.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Noto Sans Devanagari';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url('/fonts/noto-sans-devanagari.woff2') format('woff2');
+}
 
 @tailwind base;
 @tailwind components;
@@ -25,7 +72,7 @@
   }
 
   html {
-    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    font-family: 'Inter', 'Noto Sans Devanagari', ui-sans-serif, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -37,6 +84,27 @@
     color: var(--ink);
     /* Faint fibre texture — stops the UI reading as flat vector output */
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  }
+
+  /* A whisper of a ruled canvas — visible only as an edge */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    background-image:
+      linear-gradient(to right, rgba(20, 20, 15, 0.026) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(20, 20, 15, 0.026) 1px, transparent 1px);
+    background-size: 96px 96px;
+    mask-image: radial-gradient(ellipse 70% 50% at 75% 0%, black, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse 70% 50% at 75% 0%, black, transparent 70%);
+  }
+
+  .dark body::before {
+    background-image:
+      linear-gradient(to right, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
   }
 
   .dark body {
@@ -133,7 +201,8 @@
   .sk-btn-primary {
     @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-ink text-paper text-sm font-semibold
            hover:bg-ink-soft active:translate-y-px transition-all duration-150
-           disabled:opacity-40 disabled:cursor-not-allowed disabled:active:translate-y-0;
+           disabled:bg-transparent disabled:text-ink-faint disabled:border disabled:border-rule disabled:shadow-none
+           disabled:cursor-not-allowed disabled:active:translate-y-0;
   }
   .sk-btn-ghost {
     @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-rule text-ink text-sm font-medium
@@ -145,6 +214,9 @@
   }
   .dark .sk-btn-primary {
     @apply bg-paper text-[#14140f] hover:bg-white;
+  }
+  .dark .sk-btn-primary:disabled {
+    @apply bg-transparent text-white/30 border-white/15;
   }
   .dark .sk-btn-ghost {
     @apply border-dark-border text-[#e8e5da] bg-transparent hover:bg-white/5 hover:border-white/25;

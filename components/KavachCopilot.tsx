@@ -165,18 +165,15 @@ export default function KavachCopilot({
     <>
       {/* ── Launcher ── */}
       {!isOpen && (
-        <div className="no-print fixed bottom-[4.75rem] right-4 z-40 lg:bottom-6 lg:right-6">
+        <div className="no-print fixed bottom-[4.75rem] right-3 z-40 lg:bottom-6 lg:right-6">
           <button
             onClick={() => setIsOpen(true)}
-            className="group flex items-center gap-2.5 rounded-lg border border-ink/20 bg-ink px-3.5 py-2.5 text-paper shadow-lift transition-all duration-200 hover:-translate-y-0.5 dark:border-white/20 dark:bg-paper dark:text-ink"
+            className="group flex h-10 w-10 items-center justify-center gap-2.5 rounded-full border border-ink/20 bg-ink text-paper shadow-lift transition-all duration-200 hover:-translate-y-0.5 sm:h-auto sm:w-auto sm:rounded-lg sm:px-3.5 sm:py-2.5 dark:border-white/20 dark:bg-paper dark:text-ink"
             aria-label="Open Kavach copilot"
           >
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-trust opacity-60" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-trust" />
-            </span>
-            <MessageSquare className="h-3.5 w-3.5 opacity-70" strokeWidth={1.8} />
-            <span className="font-mono text-[10px] uppercase tracking-eyebrow">
+            <span className="absolute right-0 top-0 h-2 w-2 rounded-full bg-trust ring-2 ring-paper sm:static sm:mr-0 sm:h-1.5 sm:w-1.5 sm:ring-0 dark:ring-dark-surface" />
+            <MessageSquare className="h-4 w-4 opacity-80 sm:h-3.5 sm:w-3.5" strokeWidth={1.8} />
+            <span className="hidden font-mono text-[10px] uppercase tracking-eyebrow sm:inline">
               {lang === "en" ? "Ask Kavach" : "कवच से पूछें"}
             </span>
             <span className="hidden h-3 w-px bg-paper/25 sm:block dark:bg-ink/20" />
