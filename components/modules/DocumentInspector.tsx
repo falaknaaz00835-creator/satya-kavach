@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FileSearch,
   ShieldAlert,
@@ -15,6 +15,7 @@ import {
   Calculator,
 } from 'lucide-react';
 import RealTimeGroundingCard from '@/components/RealTimeGroundingCard';
+import { takeIntake } from '@/lib/intake';
 
 interface DocumentInspectorProps {
   lang: 'en' | 'hi';
@@ -121,15 +122,22 @@ export default function DocumentInspector({ lang, onAuditComplete }: DocumentIns
     reader.readAsDataURL(file.slice(0, 32768));
   };
 
+  /* ── Universal intake: a document routed from the home desk ── */
+  useEffect(() => {
+    const incoming = takeIntake('document');
+    if (incoming) handleFileUpload(incoming);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div className="flex flex-col gap-6 p-6 max-w-5xl mx-auto">
       {/* Header */}
       <div>
         <div className="flex items-center gap-2">
-          <span className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-rule bg-card text-ink-muted dark:border-white/15 dark:bg-white/5 dark:text-white/60">
             <FileSearch className="w-5 h-5" />
           </span>
-          <h2 className="text-xl font-bold text-ink dark:text-white">
+          <h2 className="font-display text-[20px] leading-tight text-ink dark:text-white">
             {lang === 'en' ? 'Document Forensics & Bill Tampering' : 'दस्तावेज़ फॉरेंसिक और बिल जांच'}
           </h2>
         </div>

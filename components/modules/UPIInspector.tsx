@@ -24,6 +24,7 @@ import {
   X,
 } from "lucide-react";
 import RealTimeGroundingCard from "@/components/RealTimeGroundingCard";
+import { takeIntake } from "@/lib/intake";
 import { computeSHA256, validateUTR as validateUTRAlgorithmic } from "@/lib/real-forensics";
 
 /* ─────────────────────────────────────────
@@ -372,7 +373,7 @@ export default function UPIInspector({
   onAuditComplete,
 }: {
   lang: "en" | "hi";
-  onAuditComplete: () => void;
+  onAuditComplete: (report?: any, meta?: { demo?: boolean }) => void;
 }) {
   const [mode, setMode] = useState<"idle" | "loading" | "done">("idle");
   const [imageURL, setImageURL] = useState<string | null>(null);
@@ -415,7 +416,7 @@ export default function UPIInspector({
     setShowELA(false);
     setShowFullEvidence(false);
     setGroundingData(null);
-    onAuditComplete();
+    onAuditComplete(sample.mockResult, { demo: true });
 
     // Query backend to retrieve real-time grounded research
     fetch("/api/forensics/analyze", {
@@ -521,7 +522,7 @@ export default function UPIInspector({
 
         setResult(newResult);
         setMode("done");
-        onAuditComplete();
+        onAuditComplete(newResult);
       } catch (err) {
         console.error("Forensic analysis error:", err);
         setMode("done");
@@ -536,6 +537,13 @@ export default function UPIInspector({
     const file = e.dataTransfer.files?.[0];
     if (file) handleFile(file);
   }, [handleFile]);
+
+  /* ── Universal intake: a file routed from the home desk ── */
+  useEffect(() => {
+    const incoming = takeIntake("upi");
+    if (incoming) handleFile(incoming);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const reset = () => {
     setMode("idle");
@@ -647,7 +655,7 @@ export default function UPIInspector({
       <div className="mb-6">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-xl font-bold text-ink dark:text-white">
+            <h1 className="font-display text-[22px] leading-tight text-ink dark:text-white">
               {lang === "en" ? "UPI Payment Screenshot Inspector" : "UPI भुगतान स्क्रीनशॉट जांचकर्ता"}
             </h1>
             <p className="text-sm text-ink-muted dark:text-slate-400 mt-1">

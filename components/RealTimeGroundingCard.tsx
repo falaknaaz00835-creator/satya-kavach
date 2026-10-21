@@ -1,18 +1,12 @@
 "use client";
 
-import React from "react";
-import clsx from "clsx";
 import {
   Globe2,
   Building2,
   ShieldCheck,
-  ShieldAlert,
   AlertTriangle,
   ExternalLink,
-  CheckCircle2,
-  ArrowRight,
   Search,
-  Sparkles,
 } from "lucide-react";
 
 export interface GroundingCardProps {
@@ -47,175 +41,180 @@ export default function RealTimeGroundingCard({
   if (!entityProfile && !liveWebStatus && !riskRationale) return null;
 
   const repScore = liveWebStatus?.reputationScore ?? 50;
-  const repColor =
+  const repTone =
     repScore >= 75
-      ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500"
+      ? { text: "text-trust", bar: "bg-trust", label: lang === "en" ? "Trusted" : "विश्वसनीय" }
       : repScore >= 40
-      ? "text-amber-600 dark:text-amber-400 bg-amber-500"
-      : "text-red-600 dark:text-red-400 bg-red-500";
+      ? { text: "text-warning", bar: "bg-warning", label: lang === "en" ? "Mixed" : "मिश्रित" }
+      : { text: "text-fraud", bar: "bg-fraud", label: lang === "en" ? "Hostile" : "संदिग्ध" };
 
   return (
-    <div className="sk-card p-5 border border-indigo-500/25 bg-gradient-to-br from-indigo-50/40 via-surface to-purple-50/30 dark:from-indigo-950/20 dark:via-dark-card dark:to-purple-950/20 space-y-4 shadow-sm">
+    <section className="overflow-hidden rounded-xl border border-rule bg-card dark:border-dark-border dark:bg-dark-card">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border dark:border-dark-border pb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="p-1.5 rounded-lg bg-indigo-600 text-white shadow-xs">
-            <Sparkles className="w-4 h-4" />
-          </div>
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-rule px-4 py-3 dark:border-dark-border">
+        <div className="flex items-center gap-2">
+          <Search className="h-3.5 w-3.5 text-ink-faint dark:text-white/35" strokeWidth={1.8} />
           <div>
-            <h3 className="text-xs font-bold text-ink dark:text-white flex items-center gap-1.5">
-              {lang === "en"
-                ? "Real-Time Gemini AI Grounding & Web Intelligence"
-                : "रीयल-टाइम जेमिनी एआई ग्राउंडिंग और वेब इंटेलिजेंस"}
+            <h3 className="font-mono text-[10px] uppercase tracking-eyebrow text-ink-muted dark:text-white/50">
+              {lang === "en" ? "Live registry & web intelligence" : "लाइव रजिस्ट्री व वेब इंटेलिजेंस"}
             </h3>
-            <p className="text-[10px] text-ink-muted dark:text-slate-400 font-mono">
-              Live Registry Cross-Reference · Threat Intelligence Feeds
+            <p className="mt-0.5 text-[11px] text-ink-faint dark:text-white/30">
+              {lang === "en"
+                ? "Cross-referenced against public registries and open sources"
+                : "सार्वजनिक रजिस्ट्री और खुले स्रोतों से मिलान"}
             </p>
           </div>
         </div>
-        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-          {provider || "Gemini 3.8 Flash"}
+        <span className="rounded border border-rule px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider text-ink-faint dark:border-white/15 dark:text-white/35">
+          {provider || "Gemini grounded"}
         </span>
       </div>
 
-      {/* Grid: Entity Profile & Live Web Status */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-        {/* Entity Profile */}
-        {entityProfile && (
-          <div className="bg-surface dark:bg-dark-surface p-3 rounded-lg border border-border dark:border-dark-border space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted dark:text-slate-400 flex items-center gap-1">
-                <Building2 className="w-3.5 h-3.5 text-indigo-500" />
-                {lang === "en" ? "Entity Profile" : "संस्था प्रोफ़ाइल"}
-              </span>
-              {entityProfile.isVerifiedEntity ? (
-                <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                  <ShieldCheck className="w-3 h-3" /> Verified
+      <div className="space-y-4 p-4">
+        <div className="grid gap-3 sm:grid-cols-2">
+          {/* Entity */}
+          {entityProfile && (
+            <div className="rounded-lg border border-rule bg-paper/60 p-3 dark:border-white/10 dark:bg-white/[0.02]">
+              <div className="flex items-start justify-between gap-2">
+                <span className="flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-wider text-ink-faint dark:text-white/30">
+                  <Building2 className="h-3 w-3" />
+                  {lang === "en" ? "Entity" : "संस्था"}
                 </span>
-              ) : (
-                <span className="flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400">
-                  <AlertTriangle className="w-3 h-3" /> Unverified / High-Risk
+                {entityProfile.isVerifiedEntity ? (
+                  <span className="flex items-center gap-1 font-mono text-[9px] uppercase tracking-wider text-trust">
+                    <ShieldCheck className="h-2.5 w-2.5" />
+                    {lang === "en" ? "verified" : "सत्यापित"}
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 font-mono text-[9px] uppercase tracking-wider text-warning">
+                    <AlertTriangle className="h-2.5 w-2.5" />
+                    {lang === "en" ? "unverified" : "असत्यापित"}
+                  </span>
+                )}
+              </div>
+
+              <p className="mt-2 truncate font-display text-[16px] text-ink dark:text-white">
+                {entityProfile.entityName || (lang === "en" ? "Unidentified artefact" : "अज्ञात आर्टिफैक्ट")}
+              </p>
+              <p className="text-[11px] text-ink-muted dark:text-white/40">
+                {entityProfile.entityType || "—"}
+              </p>
+
+              <dl className="mt-2.5 space-y-1.5 border-t border-dashed border-rule pt-2 font-mono text-[10px] dark:border-white/10">
+                <div className="flex items-baseline justify-between gap-2">
+                  <dt className="text-ink-faint dark:text-white/25">
+                    {lang === "en" ? "registry" : "रजिस्ट्री"}
+                  </dt>
+                  <dd className="max-w-[62%] truncate text-ink dark:text-white/70">
+                    {entityProfile.registryStatus || "Unindexed"}
+                  </dd>
+                </div>
+                {entityProfile.domainFootprint && (
+                  <div className="flex items-baseline justify-between gap-2">
+                    <dt className="text-ink-faint dark:text-white/25">
+                      {lang === "en" ? "footprint" : "उपस्थिति"}
+                    </dt>
+                    <dd className="max-w-[62%] truncate text-ink dark:text-white/70">
+                      {entityProfile.domainFootprint}
+                    </dd>
+                  </div>
+                )}
+              </dl>
+            </div>
+          )}
+
+          {/* Reputation */}
+          {liveWebStatus && (
+            <div className="rounded-lg border border-rule bg-paper/60 p-3 dark:border-white/10 dark:bg-white/[0.02]">
+              <div className="flex items-start justify-between gap-2">
+                <span className="flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-wider text-ink-faint dark:text-white/30">
+                  <Globe2 className="h-3 w-3" />
+                  {lang === "en" ? "Reputation" : "प्रतिष्ठा"}
                 </span>
-              )}
-            </div>
-
-            <div>
-              <p className="font-bold text-sm text-ink dark:text-white truncate">
-                {entityProfile.entityName || "Identified Artifact"}
-              </p>
-              <p className="text-[11px] text-ink-muted dark:text-slate-400">
-                {entityProfile.entityType || "Unknown Entity Type"}
-              </p>
-            </div>
-
-            <div className="pt-1 border-t border-border/60 dark:border-dark-border/60 flex items-center justify-between text-[11px] font-mono">
-              <span className="text-ink-faint dark:text-slate-500">Registry:</span>
-              <span className="font-semibold text-ink dark:text-slate-200 truncate max-w-[180px]">
-                {entityProfile.registryStatus || "Unindexed"}
-              </span>
-            </div>
-
-            {entityProfile.domainFootprint && (
-              <div className="flex items-center justify-between text-[11px] font-mono">
-                <span className="text-ink-faint dark:text-slate-500">Footprint:</span>
-                <span className="text-indigo-600 dark:text-indigo-400 truncate max-w-[180px]">
-                  {entityProfile.domainFootprint}
+                <span className={`font-mono text-[10px] font-semibold ${repTone.text}`}>
+                  {repScore}/100
                 </span>
               </div>
-            )}
+
+              <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-rule dark:bg-white/10">
+                <div
+                  className={`h-full ${repTone.bar}`}
+                  style={{ width: `${Math.min(100, Math.max(4, repScore))}%` }}
+                />
+              </div>
+
+              <p className="mt-2 text-[11px] leading-relaxed text-ink-muted dark:text-white/45">
+                {liveWebStatus.summary}
+              </p>
+
+              {!!liveWebStatus.searchSignals?.length && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {liveWebStatus.searchSignals.slice(0, 4).map((sig, i) => (
+                    <span
+                      key={i}
+                      className="max-w-full truncate rounded border border-rule px-1.5 py-0.5 font-mono text-[9px] text-ink-faint dark:border-white/10 dark:text-white/30"
+                    >
+                      {sig}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Sources */}
+        {!!liveWebStatus?.groundedSources?.length && (
+          <div>
+            <p className="mb-1.5 font-mono text-[9px] uppercase tracking-eyebrow text-ink-faint dark:text-white/25">
+              {lang === "en" ? "Grounded sources" : "स्रोत"}
+            </p>
+            <div className="divide-y divide-rule dark:divide-white/10">
+              {liveWebStatus.groundedSources.slice(0, 3).map((src, i) => (
+                <a
+                  key={i}
+                  href={src.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group flex items-center gap-2 py-1.5 text-[11px] text-ink-muted transition-colors hover:text-ink dark:text-white/40 dark:hover:text-white"
+                >
+                  <ExternalLink className="h-2.5 w-2.5 shrink-0 opacity-50" />
+                  <span className="truncate">{src.title}</span>
+                </a>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* Live Web Status */}
-        {liveWebStatus && (
-          <div className="bg-surface dark:bg-dark-surface p-3 rounded-lg border border-border dark:border-dark-border space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-ink-muted dark:text-slate-400 flex items-center gap-1">
-                <Globe2 className="w-3.5 h-3.5 text-indigo-500" />
-                {lang === "en" ? "Live Web Status" : "लाइव वेब स्थिति"}
-              </span>
-              <span className="text-[10px] font-mono font-bold text-ink dark:text-white">
-                Reputation: {repScore}/100
-              </span>
-            </div>
-
-            <p className="text-[11px] text-ink-muted dark:text-slate-300 leading-relaxed">
-              {liveWebStatus.summary}
+        {riskRationale && (
+          <div className="border-l-2 border-accent/70 pl-3">
+            <p className="font-mono text-[9px] uppercase tracking-eyebrow text-ink-faint dark:text-white/25">
+              {lang === "en" ? "Investigative rationale" : "जाँच का आधार"}
             </p>
+            <p className="mt-1 text-[12px] leading-relaxed text-ink-soft dark:text-white/60">
+              {riskRationale}
+            </p>
+          </div>
+        )}
 
-            {/* Search signals */}
-            {liveWebStatus.searchSignals && liveWebStatus.searchSignals.length > 0 && (
-              <div className="flex flex-wrap gap-1 pt-1">
-                {liveWebStatus.searchSignals.map((sig, i) => (
-                  <span
-                    key={i}
-                    className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-surface dark:bg-dark-surface border border-border dark:border-dark-border text-ink-muted dark:text-slate-400 truncate max-w-[200px]"
-                  >
-                    • {sig}
+        {!!actionSteps?.length && (
+          <div>
+            <p className="mb-1.5 font-mono text-[9px] uppercase tracking-eyebrow text-ink-faint dark:text-white/25">
+              {lang === "en" ? "Citizen action steps" : "नागरिक कार्य कदम"}
+            </p>
+            <ol className="space-y-1.5">
+              {actionSteps.map((step, i) => (
+                <li key={i} className="flex items-start gap-2.5 text-[12px] leading-snug text-ink-soft dark:text-white/60">
+                  <span className="font-mono text-[9px] text-accent">
+                    {String(i + 1).padStart(2, "0")}
                   </span>
-                ))}
-              </div>
-            )}
-
-            {/* Grounded Sources */}
-            {liveWebStatus.groundedSources && liveWebStatus.groundedSources.length > 0 && (
-              <div className="pt-1.5 border-t border-border/60 dark:border-dark-border/60">
-                <p className="text-[10px] text-ink-faint dark:text-slate-500 mb-1">
-                  Google Search Grounded Citations:
-                </p>
-                <div className="space-y-0.5">
-                  {liveWebStatus.groundedSources.slice(0, 2).map((src, i) => (
-                    <a
-                      key={i}
-                      href={src.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-1 text-[10px] text-indigo-600 dark:text-indigo-400 hover:underline truncate"
-                    >
-                      <ExternalLink className="w-2.5 h-2.5 shrink-0" />
-                      <span className="truncate">{src.title}</span>
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
+                  {step}
+                </li>
+              ))}
+            </ol>
           </div>
         )}
       </div>
-
-      {/* Risk Rationale */}
-      {riskRationale && (
-        <div className="p-3 rounded-lg bg-surface/70 dark:bg-dark-surface/70 border border-border dark:border-dark-border">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-ink-muted dark:text-slate-400 mb-1">
-            {lang === "en" ? "Investigative Rationale" : "जांच का औचित्य"}
-          </p>
-          <p className="text-xs text-ink dark:text-slate-200 leading-relaxed">
-            {riskRationale}
-          </p>
-        </div>
-      )}
-
-      {/* Protective Action Steps */}
-      {actionSteps && actionSteps.length > 0 && (
-        <div className="space-y-1.5">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-ink-muted dark:text-slate-400">
-            {lang === "en" ? "Recommended Citizen Action Steps" : "नागरिक सुरक्षा कदम"}
-          </p>
-          <div className="space-y-1">
-            {actionSteps.map((step, i) => (
-              <div
-                key={i}
-                className="flex items-start gap-2 text-xs text-ink dark:text-slate-200 bg-surface dark:bg-dark-surface p-2 rounded border border-border dark:border-dark-border"
-              >
-                <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400 shrink-0 text-[11px]">
-                  0{i + 1}
-                </span>
-                <span className="text-[11px] leading-tight">{step}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+    </section>
   );
 }

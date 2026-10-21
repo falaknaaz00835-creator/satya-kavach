@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import clsx from "clsx";
 import {
   BriefcaseBusiness,
@@ -24,6 +24,7 @@ import {
   Info,
 } from "lucide-react";
 import RealTimeGroundingCard from "@/components/RealTimeGroundingCard";
+import { takeIntake } from "@/lib/intake";
 
 /* ─────────────────────────────────────────
    Types
@@ -596,7 +597,7 @@ export default function JobScreener({
   onAuditComplete,
 }: {
   lang: "en" | "hi";
-  onAuditComplete: () => void;
+  onAuditComplete: (report?: any, meta?: { demo?: boolean }) => void;
 }) {
   const [mode, setMode] = useState<"idle" | "loading" | "done">("idle");
   const [inputText, setInputText] = useState("");
@@ -653,18 +654,33 @@ export default function JobScreener({
         setResult(localRes);
         setMode("done");
         if (sampleId) setActiveSample(sampleId);
-        onAuditComplete();
+        onAuditComplete(localRes);
       } catch (err) {
         console.error("Job screening error:", err);
         const res = screenOfferLetter(text);
         setResult(res);
         setMode("done");
         if (sampleId) setActiveSample(sampleId);
-        onAuditComplete();
+        onAuditComplete(res);
       }
     },
     [lang, onAuditComplete]
   );
+
+  /* ── Universal intake: a letter routed from the home desk ── */
+  useEffect(() => {
+    const incoming = takeIntake("job");
+    if (!incoming) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = String(reader.result ?? "");
+      setInputText(text);
+      setCharCount(text.length);
+      runScreen(text);
+    };
+    reader.readAsText(incoming);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const loadSample = useCallback((s: SampleCase) => {
     setInputText(s.content);
@@ -739,7 +755,7 @@ export default function JobScreener({
       {/* Header */}
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-bold text-ink dark:text-white">
+          <h1 className="font-display text-[22px] leading-tight text-ink dark:text-white">
             {lang === "en" ? "Fake Job & Internship Offer Letter Screener" : "नकली नौकरी व इंटर्नशिप ऑफर लेटर जांचकर्ता"}
           </h1>
           <p className="text-sm text-ink-muted dark:text-slate-400 mt-1">
@@ -1009,7 +1025,7 @@ export default function JobScreener({
                           </div>
                           {flag.matchedText && (
                             <p className="sk-mono text-[10px] text-ink-muted dark:text-slate-400 mt-0.5 bg-surface dark:bg-dark-surface rounded px-2 py-0.5 inline-block max-w-full truncate border border-border dark:border-dark-border">
-                              "{flag.matchedText}"
+                              &ldquo;{flag.matchedText}&rdquo;
                             </p>
                           )}
                           <p className="text-[11px] text-ink-muted dark:text-slate-400 mt-1 leading-relaxed">

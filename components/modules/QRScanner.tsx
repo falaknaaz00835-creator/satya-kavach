@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import clsx from "clsx";
 import {
   QrCode,
@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import RealTimeGroundingCard from "@/components/RealTimeGroundingCard";
 import { parseUPIIntent, computeSHA256 } from "@/lib/real-forensics";
+import { takeIntake } from "@/lib/intake";
 
 /* ─────────────────────────────────────────
    Types
@@ -518,7 +519,7 @@ export default function QRScanner({
   onAuditComplete,
 }: {
   lang: "en" | "hi";
-  onAuditComplete: () => void;
+  onAuditComplete: (report?: any, meta?: { demo?: boolean }) => void;
 }) {
   const [mode, setMode] = useState<"idle" | "loading" | "done">("idle");
   const [pastedInput, setPastedInput] = useState("");
@@ -607,17 +608,24 @@ export default function QRScanner({
 
         setResult(localRes);
         setMode("done");
-        onAuditComplete();
+        onAuditComplete(localRes);
       } catch (err) {
         console.error("QR analysis error:", err);
         const res = analyseContent(decoded);
         setResult(res);
         setMode("done");
-        onAuditComplete();
+        onAuditComplete(res);
       }
     },
     [lang, onAuditComplete]
   );
+
+  /* ── Universal intake: a file routed from the home desk ── */
+  useEffect(() => {
+    const incoming = takeIntake("qr");
+    if (incoming) handleFile(incoming);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /* ── Load sample ── */
   const loadSample = useCallback((sample: SampleCase) => {
@@ -771,7 +779,7 @@ export default function QRScanner({
       <div className="mb-6">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-xl font-bold text-ink dark:text-white">
+            <h1 className="font-display text-[22px] leading-tight text-ink dark:text-white">
               {lang === "en" ? "QR Code & Trap-Link Scanner" : "QR कोड और ट्रैप-लिंक स्कैनर"}
             </h1>
             <p className="text-sm text-ink-muted dark:text-slate-400 mt-1">
