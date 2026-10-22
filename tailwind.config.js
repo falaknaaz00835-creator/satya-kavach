@@ -8,31 +8,44 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // SatyaKavach design system tokens
-        surface:      "#F8FAFC",
-        card:         "#FFFFFF",
-        border:       "#E2E8F0",
-        ink:          "#0F172A",
-        "ink-muted":  "#64748B",
-        "ink-faint":  "#94A3B8",
-        // Semantic status
-        trust:        "#059669",
-        "trust-bg":   "#ECFDF5",
-        warning:      "#D97706",
-        "warning-bg": "#FFFBEB",
-        fraud:        "#DC2626",
-        "fraud-bg":   "#FEF2F2",
-        // Dark mode surfaces
-        "dark-surface": "#0D1117",
-        "dark-card":    "#161B22",
-        "dark-border":  "#30363D",
+        bg: "rgb(var(--rgb-bg) / <alpha-value>)",
+        surface: "rgb(var(--rgb-surface) / <alpha-value>)",
+        card: "rgb(var(--rgb-card) / <alpha-value>)",
+        border: ({ opacityValue }) =>
+          opacityValue === undefined
+            ? "var(--color-border)"
+            : `rgb(var(--rgb-border) / ${opacityValue})`,
+        ink: "rgb(var(--rgb-ink) / <alpha-value>)",
+        "ink-muted": "rgb(var(--rgb-ink-muted) / <alpha-value>)",
+        "ink-faint": "rgb(var(--rgb-ink-faint) / <alpha-value>)",
+        accent: {
+          DEFAULT: "rgb(var(--rgb-accent) / <alpha-value>)",
+          end: "rgb(var(--rgb-accent-end) / <alpha-value>)",
+        },
+        "accent-teal": "rgb(var(--rgb-teal) / <alpha-value>)",
+        safe: "rgb(var(--rgb-safe) / <alpha-value>)",
+        suspicious: "rgb(var(--rgb-suspicious) / <alpha-value>)",
+        fake: "rgb(var(--rgb-fake) / <alpha-value>)",
+        trust: "rgb(var(--rgb-safe) / <alpha-value>)",
+        "trust-bg": "var(--color-safe-bg)",
+        warning: "rgb(var(--rgb-suspicious) / <alpha-value>)",
+        "warning-bg": "var(--color-suspicious-bg)",
+        fraud: "rgb(var(--rgb-fake) / <alpha-value>)",
+        "fraud-bg": "var(--color-fake-bg)",
+        "dark-surface": "rgb(var(--rgb-bg) / <alpha-value>)",
+        "dark-card": "rgb(var(--rgb-surface) / <alpha-value>)",
+        "dark-border": ({ opacityValue }) =>
+          opacityValue === undefined
+            ? "var(--color-border)"
+            : `rgb(var(--rgb-border) / ${opacityValue})`,
       },
       fontFamily: {
-        mono: ["JetBrains Mono", "IBM Plex Mono", "Fira Code", "monospace"],
-        sans: ["Inter", "system-ui", "sans-serif"],
+        heading: ["var(--font-heading)", "system-ui", "sans-serif"],
+        sans: ["var(--font-body)", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "monospace"],
       },
       boxShadow: {
-        card:        "0 1px 3px 0 rgb(15 23 42 / 0.06), 0 1px 2px -1px rgb(15 23 42 / 0.06)",
+        card: "0 1px 3px 0 rgb(15 23 42 / 0.06), 0 1px 2px -1px rgb(15 23 42 / 0.06)",
         "card-hover": "0 4px 12px 0 rgb(15 23 42 / 0.10)",
       },
     },

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import clsx from "clsx";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   ShieldCheck,
   QrCode,
@@ -13,7 +13,6 @@ import {
   Moon,
   Sun,
   Globe2,
-  Menu,
   X,
   Activity,
   BookOpen,
@@ -30,6 +29,8 @@ import KavachCopilot from "@/components/KavachCopilot";
 import ARScannerView from "@/components/ARScannerView";
 import ShareShieldModal, { ShareShieldData } from "@/components/ShareShieldModal";
 import CommandPalette from "@/components/CommandPalette";
+import AppSidebar from "@/components/AppSidebar";
+import MobileTabBar from "@/components/MobileTabBar";
 
 /* ─────────────────────────────────────────
    Navigation module definitions
@@ -147,111 +148,23 @@ export default function WorkbenchShell() {
   const currentModule = MODULES.find((m) => m.id === activeModule)!;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-surface dark:bg-dark-surface sk-ambient-glow">
-      {/* ── Sidebar ── */}
-      <aside
-        className={clsx(
-          "flex flex-col border-r border-border dark:border-dark-border bg-card dark:bg-dark-card transition-all duration-200 shrink-0",
-          sidebarOpen ? "w-64" : "w-16"
-        )}
-      >
-        {/* Logo */}
-        <div className="flex items-center gap-3 px-4 py-4 border-b border-border dark:border-dark-border h-14 shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-ink dark:bg-white flex items-center justify-center shrink-0">
-            <ShieldCheck className="w-4 h-4 text-white dark:text-dark-surface" />
-          </div>
-          {sidebarOpen && (
-            <div className="min-w-0">
-              <p className="text-sm font-bold text-ink dark:text-white leading-none truncate">
-                SatyaKavach
-              </p>
-              <p className="text-[10px] text-ink-faint dark:text-slate-500 leading-none mt-0.5 font-mono truncate">
-                सत्य कवच v1.0
-              </p>
-            </div>
-          )}
-          <button
-            onClick={() => setSidebarOpen((s) => !s)}
-            className="ml-auto text-ink-muted dark:text-slate-400 hover:text-ink dark:hover:text-white transition-colors shrink-0"
-            aria-label="Toggle sidebar"
-          >
-            {sidebarOpen ? <ChevronRight className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-          </button>
-        </div>
-
-        {/* Nav */}
-        <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto">
-          {sidebarOpen && (
-            <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-widest text-ink-faint dark:text-slate-600">
-              {lang === "en" ? "Forensic Modules" : "फॉरेंसिक मॉड्यूल"}
-            </p>
-          )}
-          {MODULES.map((mod) => {
-            const Icon = mod.icon;
-            const isActive = activeModule === mod.id;
-            const isLive = mod.status === "live";
-
-            return (
-              <button
-                key={mod.id}
-                onClick={() => isLive && setActiveModule(mod.id)}
-                className={clsx(
-                  "sk-nav-item w-full text-left",
-                  isActive && "active",
-                  !isLive && "opacity-40 cursor-not-allowed"
-                )}
-                disabled={!isLive}
-                title={!sidebarOpen ? (lang === "en" ? mod.label : mod.labelHi) : undefined}
-              >
-                <Icon className="w-4 h-4 shrink-0" />
-                {sidebarOpen && (
-                  <span className="flex-1 min-w-0">
-                    <span className="block truncate">
-                      {lang === "en" ? mod.label : mod.labelHi}
-                    </span>
-                    {!isActive && !isLive && (
-                      <span className="text-[10px] text-ink-faint dark:text-slate-600 font-normal">
-                        Coming soon
-                      </span>
-                    )}
-                  </span>
-                )}
-                {sidebarOpen && isLive && !isActive && (
-                  <span className="text-[10px] font-semibold text-trust bg-trust-bg px-1.5 py-0.5 rounded-full shrink-0">
-                    LIVE
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* Saved audit log button */}
-        <div className="border-t border-border dark:border-dark-border px-2 py-2 shrink-0">
-          <button
-            onClick={() => setLogOpen(true)}
-            className="sk-nav-item w-full"
-            title={!sidebarOpen ? "Audit Log" : undefined}
-          >
-            <Clock className="w-4 h-4 shrink-0" />
-            {sidebarOpen && (
-              <span className="flex-1 truncate">
-                {lang === "en" ? "Audit Log" : "ऑडिट लॉग"}
-              </span>
-            )}
-            {sidebarOpen && auditCount > 0 && (
-              <span className="text-[10px] font-bold bg-ink text-white dark:bg-white dark:text-dark-surface px-1.5 py-0.5 rounded-full shrink-0">
-                {auditCount}
-              </span>
-            )}
-          </button>
-        </div>
-      </aside>
+    <div className="flex h-screen overflow-hidden bg-bg sk-ambient-glow p-0 md:p-3 md:gap-3">
+      {/* ── Sidebar (desktop) ── */}
+      <AppSidebar
+        modules={MODULES}
+        lang={lang}
+        activeModule={activeModule}
+        onSelectModule={setActiveModule}
+        sidebarOpen={sidebarOpen}
+        onToggleSidebar={() => setSidebarOpen((s) => !s)}
+        auditCount={auditCount}
+        onOpenLog={() => setLogOpen(true)}
+      />
 
       {/* ── Main area ── */}
-      <div className="flex flex-col flex-1 min-w-0">
+      <div className="flex flex-col flex-1 min-w-0 md:rounded-2xl md:overflow-hidden md:border md:border-border md:bg-surface/40">
         {/* Top status bar */}
-        <header className="h-14 shrink-0 border-b border-border dark:border-dark-border bg-card/90 dark:bg-dark-card/90 backdrop-blur-md flex items-center gap-3 px-6">
+        <header className="h-14 shrink-0 border-b border-border bg-surface/70 backdrop-blur-md flex items-center gap-3 px-4 md:px-6 overflow-x-auto">
           {/* Breadcrumb */}
           <div className="flex items-center gap-1.5 text-sm min-w-0">
             <span className="text-ink-muted dark:text-slate-400 shrink-0">Workbench</span>
@@ -355,42 +268,60 @@ export default function WorkbenchShell() {
         </header>
 
         {/* Module content area */}
-        <main className="flex-1 overflow-y-auto">
-          {activeModule === "upi" && (
-            <UPIInspector
-              lang={lang}
-              onAuditComplete={recordAudit}
-              onOpenShareShield={(data) => {
-                setShareData(data);
-                setShareOpen(true);
-              }}
-            />
-          )}
-          {activeModule === "qr" && (
-            <QRScanner
-              lang={lang}
-              onAuditComplete={recordAudit}
-              initialInput={activeQRTarget}
-              onOpenShareShield={(data) => {
-                setShareData(data);
-                setShareOpen(true);
-              }}
-            />
-          )}
-          {activeModule === "job" && (
-            <JobScreener lang={lang} onAuditComplete={recordAudit} />
-          )}
-          {activeModule === "deepfake" && (
-            <DeepfakeInspector lang={lang} onAuditComplete={recordAudit} />
-          )}
-          {activeModule === "document" && (
-            <DocumentInspector lang={lang} onAuditComplete={recordAudit} />
-          )}
-          {activeModule !== "upi" && activeModule !== "qr" && activeModule !== "job" && activeModule !== "deepfake" && activeModule !== "document" && (
-            <ComingSoon module={currentModule} lang={lang} />
-          )}
+        <main className="flex-1 overflow-y-auto pb-24 md:pb-0">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeModule}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="h-full min-h-full"
+            >
+              {activeModule === "upi" && (
+                <UPIInspector
+                  lang={lang}
+                  onAuditComplete={recordAudit}
+                  onOpenShareShield={(data) => {
+                    setShareData(data);
+                    setShareOpen(true);
+                  }}
+                />
+              )}
+              {activeModule === "qr" && (
+                <QRScanner
+                  lang={lang}
+                  onAuditComplete={recordAudit}
+                  initialInput={activeQRTarget}
+                  onOpenShareShield={(data) => {
+                    setShareData(data);
+                    setShareOpen(true);
+                  }}
+                />
+              )}
+              {activeModule === "job" && (
+                <JobScreener lang={lang} onAuditComplete={recordAudit} />
+              )}
+              {activeModule === "deepfake" && (
+                <DeepfakeInspector lang={lang} onAuditComplete={recordAudit} />
+              )}
+              {activeModule === "document" && (
+                <DocumentInspector lang={lang} onAuditComplete={recordAudit} />
+              )}
+              {activeModule !== "upi" && activeModule !== "qr" && activeModule !== "job" && activeModule !== "deepfake" && activeModule !== "document" && (
+                <ComingSoon module={currentModule} lang={lang} />
+              )}
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
+
+      <MobileTabBar
+        modules={MODULES}
+        lang={lang}
+        activeModule={activeModule}
+        onSelectModule={setActiveModule}
+      />
 
       {/* ── AR Camera Viewfinder Overlay ── */}
       {arOpen && (
