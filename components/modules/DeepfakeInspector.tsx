@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import RealTimeGroundingCard from '@/components/RealTimeGroundingCard';
 import AppleCircularDial from '@/components/AppleCircularDial';
+import Button from '@/components/Button';
 
 interface DeepfakeInspectorProps {
   lang: 'en' | 'hi';
@@ -310,7 +311,9 @@ export default function DeepfakeInspector({ lang, onAuditComplete }: DeepfakeIns
           </div>
 
           {/* Viral Family Shield Button */}
-          <button
+          <Button
+            variant="primary"
+            fullWidth
             onClick={() => {
               const event = new CustomEvent("open-family-shield", {
                 detail: {
@@ -325,13 +328,13 @@ export default function DeepfakeInspector({ lang, onAuditComplete }: DeepfakeIns
               });
               window.dispatchEvent(event);
             }}
-            className="w-full py-2.5 px-4 rounded-xl border border-indigo-500/30 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 hover:from-indigo-500/20 hover:to-pink-500/20 text-indigo-700 dark:text-indigo-300 font-semibold text-xs flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer active:scale-95"
+            className="text-xs flex items-center justify-center gap-2"
           >
-            <Share2 className="w-4 h-4 text-indigo-500" />
+            <Share2 className="w-4 h-4 text-white" />
             {lang === "en"
               ? "🛡️ Generate Family Shield & Viral Share Card"
               : "🛡️ फ़ैमिली शील्ड बनाएं व अलर्ट शेयर करें"}
-          </button>
+          </Button>
 
           {/* Telemetry Footer */}
           <div className="pt-3 border-t border-border dark:border-dark-border flex items-center justify-between text-[10px] font-mono text-ink-faint dark:text-slate-500">

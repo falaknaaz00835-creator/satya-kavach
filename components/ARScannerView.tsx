@@ -15,6 +15,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import clsx from "clsx";
+import Button from "@/components/Button";
 
 interface ARScannerViewProps {
   onClose: () => void;
@@ -296,19 +297,23 @@ export default function ARScannerView({
         </div>
 
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            variant="secondary"
+            size="xs"
             onClick={() => setUseSimulatedFeed((s) => !s)}
-            className="px-2.5 py-1 text-[11px] font-mono rounded bg-white/10 hover:bg-white/20 border border-white/20 text-slate-200 transition-colors"
+            className="text-[11px] font-mono"
           >
             {useSimulatedFeed ? "Switch to Real Cam" : "Demo Sim Feed"}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="secondary"
+            size="xs"
             onClick={onClose}
-            className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+            className="p-1.5 !rounded-full"
             aria-label="Close AR mode"
           >
             <X className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
       </header>
 
@@ -333,18 +338,22 @@ export default function ARScannerView({
               <p className="text-[10px] text-slate-400 mt-1">Live Optical Pipeline Active</p>
             </div>
             <div className="mt-4 flex gap-2">
-              <button
+              <Button
+                variant="danger"
+                size="xs"
                 onClick={() => triggerSimulation(true)}
-                className="px-3 py-1.5 rounded bg-red-600/80 hover:bg-red-600 text-xs font-mono font-bold text-white transition-colors shadow-lg"
+                className="font-mono font-bold"
               >
                 Simulate Scam QR
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="primary"
+                size="xs"
                 onClick={() => triggerSimulation(false)}
-                className="px-3 py-1.5 rounded bg-emerald-600/80 hover:bg-emerald-600 text-xs font-mono font-bold text-white transition-colors shadow-lg"
+                className="font-mono font-bold"
               >
                 Simulate Safe QR
-              </button>
+              </Button>
             </div>
           </div>
         )}

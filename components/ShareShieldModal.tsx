@@ -17,6 +17,7 @@ import {
   Camera,
 } from "lucide-react";
 import clsx from "clsx";
+import Button from "@/components/Button";
 
 export interface ShareShieldData {
   module: string;
@@ -243,12 +244,15 @@ Stay vigilant with SatyaKavach (सत्य कवच).`;
               </p>
             </div>
           </div>
-          <button
+          <Button
+            variant="secondary"
+            size="xs"
             onClick={onClose}
-            className="text-ink-muted hover:text-ink dark:hover:text-white transition-colors"
+            className="p-1.5 text-ink-muted hover:text-ink dark:hover:text-white"
+            aria-label="Close"
           >
             <X className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
 
         {/* Visual Security Alert Card Preview */}
@@ -302,41 +306,50 @@ Stay vigilant with SatyaKavach (सत्य कवच).`;
 
           <div className="grid grid-cols-2 gap-2.5">
             {/* WhatsApp */}
-            <button
+            <Button
+              variant="primary"
+              size="sm"
               onClick={handleWhatsAppShare}
-              className="p-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs flex items-center justify-center gap-2 transition-all shadow-sm active:scale-98"
+              className="p-3 text-xs flex items-center justify-center gap-2"
             >
               <MessageSquare className="w-4 h-4" />
               WhatsApp Forward
-            </button>
+            </Button>
 
             {/* Telegram */}
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={handleTelegramShare}
-              className="p-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-medium text-xs flex items-center justify-center gap-2 transition-all shadow-sm active:scale-98"
+              className="p-3 text-xs flex items-center justify-center gap-2"
             >
               <Send className="w-4 h-4" />
               Telegram Forward
-            </button>
+            </Button>
 
             {/* Instagram Stories (9:16 PNG) */}
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={handleGenerateInstagramStory}
               disabled={generatingStory}
-              className="p-3 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-amber-500 hover:opacity-90 text-white font-medium text-xs flex items-center justify-center gap-2 transition-all shadow-sm active:scale-98"
+              isLoading={generatingStory}
+              className="p-3 text-xs flex items-center justify-center gap-2"
             >
               <Camera className="w-4 h-4" />
-              {generatingStory ? "Generating..." : "Instagram Story (9:16)"}
-            </button>
+              Instagram Story (9:16)
+            </Button>
 
             {/* Copy Verbatim Text */}
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={handleCopyText}
-              className="p-3 rounded-xl border border-border dark:border-dark-border bg-surface dark:bg-dark-surface hover:bg-card text-ink dark:text-white font-medium text-xs flex items-center justify-center gap-2 transition-all active:scale-98"
+              className="p-3 text-xs flex items-center justify-center gap-2"
             >
               {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
               {copied ? "Copied to Clipboard!" : "Copy Full Text"}
-            </button>
+            </Button>
           </div>
         </div>
 

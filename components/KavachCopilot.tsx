@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   ExternalLink,
 } from "lucide-react";
+import Button from "@/components/Button";
 import type { CopilotResponse } from "@/app/api/copilot/route";
 
 interface KavachCopilotProps {
@@ -164,9 +165,10 @@ export default function KavachCopilot({
           aria-label="Kavach AI Copilot Quick Launcher"
           className="fixed bottom-5 right-6 z-40 animate-in fade-in slide-in-from-bottom-2 duration-200"
         >
-          <button
+          <Button
+            variant="primary"
             onClick={() => setIsOpen(true)}
-            className="flex items-center gap-3 px-4 py-2.5 rounded-full bg-ink text-white dark:bg-white dark:text-dark-surface shadow-xl hover:shadow-2xl border border-slate-700/30 dark:border-slate-300 hover:scale-[1.02] active:scale-[0.98] transition-all group"
+            className="flex items-center gap-3 !px-4 !py-2.5 !rounded-full shadow-xl hover:shadow-2xl border border-white/20"
             aria-label="Open Kavach Copilot"
           >
             {/* Live emerald pulsating dot */}
@@ -176,19 +178,19 @@ export default function KavachCopilot({
             </span>
 
             <div className="flex items-center gap-2">
-              <Bot className="w-4 h-4 text-emerald-400 dark:text-emerald-600" />
+              <Bot className="w-4 h-4 text-white" />
               <span className="text-xs font-semibold tracking-tight">
                 {lang === "en" ? "Kavach Copilot" : "कवच कोपायलट"}
               </span>
-              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono hidden sm:inline">
+              <span className="text-[10px] text-white/80 font-mono hidden sm:inline">
                 • AI Security Agent
               </span>
             </div>
 
-            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 dark:text-emerald-800 border border-emerald-500/30 font-semibold">
+            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-black/20 text-white border border-white/30 font-semibold">
               COPILOT
             </span>
-          </button>
+          </Button>
         </aside>
       )}
 
@@ -224,21 +226,25 @@ export default function KavachCopilot({
             </div>
 
             <div className="flex items-center gap-1">
-              <button
+              <Button
+                variant="secondary"
+                size="xs"
                 onClick={() => setMessages([])}
-                className="p-1.5 text-ink-muted hover:text-ink dark:text-slate-400 dark:hover:text-white hover:bg-surface dark:hover:bg-dark-border rounded-lg transition-colors"
+                className="p-1.5 text-ink-muted hover:text-ink dark:text-slate-400 dark:hover:text-white"
                 title={lang === "en" ? "Clear conversation" : "बातचीत साफ़ करें"}
                 aria-label="Clear chat"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="secondary"
+                size="xs"
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 text-ink-muted hover:text-ink dark:text-slate-400 dark:hover:text-white hover:bg-surface dark:hover:bg-dark-border rounded-lg transition-colors"
+                className="p-1.5 text-ink-muted hover:text-ink dark:text-slate-400 dark:hover:text-white"
                 aria-label="Close Copilot"
               >
                 <X className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -355,13 +361,16 @@ export default function KavachCopilot({
 
                       {/* 1-Click Module Switcher */}
                       <div className="pt-2">
-                        <button
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          fullWidth
                           onClick={() => handleModuleSwitch(msg.response!.recommendedModule)}
-                          className="sk-btn-primary w-full text-xs py-2 bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-1.5 shadow-sm"
+                          className="text-xs py-2 flex items-center justify-center gap-1.5"
                         >
                           <span>{msg.response.moduleActionLabel}</span>
                           <ExternalLink className="w-3 h-3" />
-                        </button>
+                        </Button>
                       </div>
 
                       {/* Telemetry Footer */}
@@ -434,14 +443,16 @@ export default function KavachCopilot({
                 disabled={isLoading}
                 className="flex-1 px-3 py-2 text-xs rounded-lg border border-border dark:border-dark-border bg-surface dark:bg-dark-surface text-ink dark:text-white placeholder:text-ink-faint dark:placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
               />
-              <button
+              <Button
+                variant="primary"
+                size="sm"
                 type="submit"
                 disabled={!inputQuery.trim() || isLoading}
-                className="p-2 rounded-lg bg-ink text-white dark:bg-white dark:text-dark-surface hover:bg-ink/90 dark:hover:bg-white/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                className="!p-2.5 rounded-lg shrink-0"
                 aria-label="Send query"
               >
                 <Send className="w-3.5 h-3.5" />
-              </button>
+              </Button>
             </form>
           </div>
         </aside>

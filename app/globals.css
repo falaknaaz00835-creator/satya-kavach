@@ -188,16 +188,24 @@
   .sk-badge-warn   { @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-sm; }
   .sk-badge-fraud  { @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 shadow-sm; }
 
-  /* Primary action button (Apple / Google tactile styling) */
+  /* Primary action button (Saffron gradient, soft glow, lifts on hover, shrinks on click) */
   .sk-btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-ink text-white text-sm font-semibold
-           hover:bg-ink/90 active:scale-[0.97] transition-all duration-200 ease-out shadow-sm hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer;
+    @apply relative overflow-hidden inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl
+           bg-gradient-to-r from-accent to-accent-end text-white text-sm font-semibold border border-white/20
+           shadow-[0_0_20px_rgb(var(--rgb-accent)/0.30)] hover:shadow-[0_0_28px_rgb(var(--rgb-accent)/0.50)]
+           hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg
+           transition-[transform,opacity,box-shadow] duration-200 ease-out disabled:opacity-40 disabled:cursor-not-allowed disabled:transform-none cursor-pointer;
   }
 
-  /* Secondary/ghost button */
+  /* Secondary / glass outline button */
   .sk-btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-ink dark:text-slate-100 text-sm font-medium
-           hover:bg-slate-100 dark:hover:bg-white/5 active:scale-[0.97] transition-all duration-200 ease-out cursor-pointer;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl
+           bg-surface/70 dark:bg-white/[0.04] backdrop-blur-md border border-border/80 dark:border-white/10
+           text-ink dark:text-slate-100 text-sm font-medium hover:border-accent/40 dark:hover:border-accent/40
+           hover:bg-surface dark:hover:bg-white/[0.08] hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg
+           transition-[transform,opacity,box-shadow,background-color,border-color] duration-200 ease-out cursor-pointer;
   }
 
   /* Floating glass sidebar */
@@ -252,8 +260,64 @@
     100% { transform: scale(2.6); opacity: 0; }
   }
 
+  /* Scanner Viewfinder Bracket Breathing Animation */
+  @keyframes sk-viewfinder-bracket-pulse {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 0.75;
+    }
+    50% {
+      transform: scale(1.06);
+      opacity: 1;
+    }
+  }
+
+  .sk-viewfinder-animated {
+    animation: sk-viewfinder-bracket-pulse 2.8s ease-in-out infinite;
+    will-change: transform, opacity;
+  }
+
+  /* Scanner Laser Sweep Line Animation */
+  @keyframes sk-scanner-sweep {
+    0% {
+      transform: translateY(-100%);
+      opacity: 0.35;
+    }
+    15% {
+      opacity: 1;
+    }
+    85% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(8%);
+      opacity: 0.35;
+    }
+  }
+
+  .sk-scanner-line-sweep {
+    animation: sk-scanner-sweep 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    will-change: transform, opacity;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sk-viewfinder-animated {
+      animation: none !important;
+      transform: none !important;
+      opacity: 0.85 !important;
+    }
+    .sk-scanner-line-sweep {
+      animation: none !important;
+      transform: translateY(0%) !important;
+      opacity: 0.75 !important;
+    }
+    .sk-gauge-ring {
+      transition: none !important;
+    }
+  }
+
   /* Dark mode overrides */
   .dark .sk-card          { @apply bg-dark-card/90 border-white/10; }
-  .dark .sk-btn-primary   { @apply bg-white text-dark-surface hover:bg-white/90; }
-  .dark .sk-btn-ghost     { @apply border-white/10 text-slate-200 hover:bg-white/5; }
+  .dark .sk-btn-primary   { @apply text-white; }
+  .dark .sk-btn-ghost     { @apply border-white/10 text-slate-100 hover:bg-white/5; }
 }

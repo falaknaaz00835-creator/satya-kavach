@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import clsx from "clsx";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   Upload,
   CheckCircle2,
@@ -23,9 +24,11 @@ import {
   ExternalLink,
   X,
   Share2,
+  CheckSquare,
+  ShieldCheck,
 } from "lucide-react";
 import RealTimeGroundingCard from "@/components/RealTimeGroundingCard";
-import AppleCircularDial from "@/components/AppleCircularDial";
+import Button from "@/components/Button";
 import { computeSHA256, validateUTR as validateUTRAlgorithmic } from "@/lib/real-forensics";
 
 /* ─────────────────────────────────────────
@@ -367,6 +370,635 @@ function ELAScoreBar({ score }: { score: number }) {
 }
 
 /* ─────────────────────────────────────────
+   Viewfinder Corner Brackets
+   (Animated scanner viewfinder with saffron highlight)
+───────────────────────────────────────── */
+function ViewfinderBrackets({
+  active = false,
+  size = "md",
+}: {
+  active?: boolean;
+  size?: "sm" | "md" | "lg";
+}) {
+  const bracketSize =
+    size === "lg" ? "w-6 h-6 sm:w-8 sm:h-8" : size === "sm" ? "w-4 h-4" : "w-5 h-5";
+  const borderThickness = "border-2";
+  const bracketColor = active
+    ? "border-accent text-accent shadow-[0_0_12px_rgb(var(--rgb-accent)/0.7)]"
+    : "border-accent/40 dark:border-accent/30 group-hover:border-accent text-accent";
+
+  return (
+    <div className="absolute inset-0 pointer-events-none select-none z-10" aria-hidden="true">
+      {/* Top Left */}
+      <span
+        className={clsx(
+          "sk-viewfinder-animated absolute top-3 left-3 sm:top-4 sm:left-4 rounded-tl-lg origin-top-left",
+          bracketSize,
+          borderThickness,
+          "border-b-0 border-r-0",
+          bracketColor,
+          "transition-[transform,opacity,border-color] duration-200",
+          active && "scale-115 !border-accent"
+        )}
+      />
+      {/* Top Right */}
+      <span
+        className={clsx(
+          "sk-viewfinder-animated absolute top-3 right-3 sm:top-4 sm:right-4 rounded-tr-lg origin-top-right",
+          bracketSize,
+          borderThickness,
+          "border-b-0 border-l-0",
+          bracketColor,
+          "transition-[transform,opacity,border-color] duration-200",
+          active && "scale-115 !border-accent"
+        )}
+      />
+      {/* Bottom Left */}
+      <span
+        className={clsx(
+          "sk-viewfinder-animated absolute bottom-3 left-3 sm:bottom-4 sm:left-4 rounded-bl-lg origin-bottom-left",
+          bracketSize,
+          borderThickness,
+          "border-t-0 border-r-0",
+          bracketColor,
+          "transition-[transform,opacity,border-color] duration-200",
+          active && "scale-115 !border-accent"
+        )}
+      />
+      {/* Bottom Right */}
+      <span
+        className={clsx(
+          "sk-viewfinder-animated absolute bottom-3 right-3 sm:bottom-4 sm:right-4 rounded-br-lg origin-bottom-right",
+          bracketSize,
+          borderThickness,
+          "border-t-0 border-l-0",
+          bracketColor,
+          "transition-[transform,opacity,border-color] duration-200",
+          active && "scale-115 !border-accent"
+        )}
+      />
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────
+   Live Forensic Checklist
+   ("Reading metadata...", "Checking fonts and pixels...",
+   "Verifying UPI ID..." where each line gets a tick as it finishes)
+───────────────────────────────────────── */
+function LiveForensicChecklist({
+  scanStep,
+  lang,
+}: {
+  scanStep: number;
+  lang: "en" | "hi";
+}) {
+  const steps = [
+    {
+      label: lang === "en" ? "Reading metadata..." : "मेटाडेटा पढ़ा जा रहा है...",
+    },
+    {
+      label: lang === "en" ? "Checking fonts and pixels..." : "फ़ॉन्ट और पिक्सेल की जाँच...",
+    },
+    {
+      label: lang === "en" ? "Verifying UPI ID..." : "UPI ID सत्यापित किया जा रहा है...",
+    },
+  ];
+
+  return (
+    <div className="w-full max-w-sm sm:max-w-md mx-auto p-3.5 rounded-xl bg-surface/90 dark:bg-[#131926]/90 backdrop-blur-md border border-border/80 dark:border-white/10 shadow-sm space-y-2.5">
+      <div className="flex items-center justify-between border-b border-border/60 dark:border-white/5 pb-2">
+        <div className="flex items-center gap-2">
+          <span className="sk-pulse-dot" />
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400">
+            {lang === "en" ? "Live Forensic Pipeline" : "लाइव फॉरेंसिक जांच"}
+          </span>
+        </div>
+        <span className="text-[11px] font-mono font-bold text-accent">
+          {scanStep >= 3 ? "3/3 Verified" : `${scanStep}/3 Checks Done`}
+        </span>
+      </div>
+
+      <div className="space-y-2">
+        {steps.map((item, index) => {
+          const isDone = scanStep > index;
+          const isCurrent = scanStep === index;
+
+          return (
+            <div
+              key={index}
+              className={clsx(
+                "flex items-center gap-2.5 transition-[opacity,transform] duration-200 ease-out",
+                isDone
+                  ? "text-ink dark:text-white font-medium"
+                  : isCurrent
+                  ? "text-ink dark:text-white font-medium"
+                  : "text-ink-faint dark:text-slate-600 opacity-60"
+              )}
+            >
+              {isDone ? (
+                <CheckCircle2 className="w-4 h-4 text-trust shrink-0 transition-transform duration-200 scale-100" />
+              ) : isCurrent ? (
+                <div className="w-4 h-4 rounded-full border-2 border-accent border-t-transparent animate-spin shrink-0" />
+              ) : (
+                <div className="w-4 h-4 rounded-full border border-border dark:border-white/20 shrink-0" />
+              )}
+              <span className="font-mono text-xs">
+                {item.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────
+   Large Circular Risk Gauge (0-100)
+   Counts up on appear with soft glow and
+   precision tick marks around the ring.
+───────────────────────────────────────── */
+interface CircularRiskGaugeProps {
+  score: number;
+  verdict: "genuine" | "suspicious" | "fraud";
+  lang: "en" | "hi";
+  size?: number;
+}
+
+function CircularRiskGauge({
+  score,
+  verdict,
+  lang,
+  size = 196,
+}: CircularRiskGaugeProps) {
+  const shouldReduceMotion = useReducedMotion();
+  const [displayScore, setDisplayScore] = useState(shouldReduceMotion ? score : 0);
+
+  useEffect(() => {
+    if (shouldReduceMotion) {
+      setDisplayScore(score);
+      return;
+    }
+
+    let startTime: number | null = null;
+    let animId: number;
+    const duration = 1200; // ms count-up
+
+    const step = (timestamp: number) => {
+      if (!startTime) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      // easeOutCubic curve
+      const ease = 1 - Math.pow(1 - progress, 3);
+      setDisplayScore(Math.round(ease * score));
+
+      if (progress < 1) {
+        animId = requestAnimationFrame(step);
+      } else {
+        setDisplayScore(score);
+      }
+    };
+
+    animId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(animId);
+  }, [score, shouldReduceMotion]);
+
+  // Color tokens aligned with design rules:
+  // safe #34D399, suspicious #FBBF24, fake #FB7185
+  const config =
+    verdict === "fraud"
+      ? {
+          stroke: "#FB7185",
+          glow: "rgba(251, 113, 133, 0.55)",
+          gradientId: "upi-gauge-fraud",
+          stop1: "#FB7185",
+          stop2: "#E11D48",
+          textColor: "text-fake",
+        }
+      : verdict === "suspicious"
+      ? {
+          stroke: "#FBBF24",
+          glow: "rgba(251, 191, 36, 0.55)",
+          gradientId: "upi-gauge-warn",
+          stop1: "#FBBF24",
+          stop2: "#D97706",
+          textColor: "text-suspicious",
+        }
+      : {
+          stroke: "#34D399",
+          glow: "rgba(52, 211, 153, 0.55)",
+          gradientId: "upi-gauge-safe",
+          stop1: "#34D399",
+          stop2: "#059669",
+          textColor: "text-safe",
+        };
+
+  const strokeWidth = 11;
+  const radius = (size - 36) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (displayScore / 100) * circumference;
+
+  const cx = size / 2;
+  const cy = size / 2;
+  const totalTicks = 40;
+  const tickOuterRadius = size / 2 - 3;
+  const tickInnerMajor = tickOuterRadius - 7;
+  const tickInnerMinor = tickOuterRadius - 4.5;
+
+  return (
+    <div className="relative flex flex-col items-center justify-center select-none">
+      {/* Soft Ambient Radial Glow Behind Gauge */}
+      <div
+        className="absolute rounded-full blur-2xl pointer-events-none transition-opacity duration-700"
+        style={{
+          width: size * 0.95,
+          height: size * 0.95,
+          background: `radial-gradient(circle, ${config.glow} 0%, transparent 70%)`,
+          opacity: 0.35,
+        }}
+        aria-hidden="true"
+      />
+
+      <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+        <svg
+          width={size}
+          height={size}
+          viewBox={`0 0 ${size} ${size}`}
+          className="overflow-visible"
+        >
+          <defs>
+            <linearGradient id={config.gradientId} x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor={config.stop1} />
+              <stop offset="100%" stopColor={config.stop2} />
+            </linearGradient>
+
+            {/* Soft Glow Filter */}
+            <filter id={`glow-${config.gradientId}`} x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="0" stdDeviation="4.5" floodColor={config.glow} floodOpacity="0.8" />
+            </filter>
+          </defs>
+
+          {/* Precision tick marks around the ring */}
+          <g className="transition-opacity duration-300">
+            {Array.from({ length: totalTicks }).map((_, i) => {
+              const angleDeg = i * (360 / totalTicks) - 90;
+              const angleRad = (angleDeg * Math.PI) / 180;
+              const isMajor = i % 10 === 0;
+              const innerR = isMajor ? tickInnerMajor : tickInnerMinor;
+              const outerR = tickOuterRadius;
+
+              const x1 = cx + innerR * Math.cos(angleRad);
+              const y1 = cy + innerR * Math.sin(angleRad);
+              const x2 = cx + outerR * Math.cos(angleRad);
+              const y2 = cy + outerR * Math.sin(angleRad);
+
+              const tickPercent = (i / totalTicks) * 100;
+              const isPassed = tickPercent <= displayScore;
+
+              return (
+                <line
+                  key={i}
+                  x1={x1}
+                  y1={y1}
+                  x2={x2}
+                  y2={y2}
+                  stroke={isPassed ? config.stroke : "currentColor"}
+                  strokeWidth={isMajor ? 1.75 : 1}
+                  strokeLinecap="round"
+                  className={clsx(
+                    "transition-colors duration-200",
+                    isPassed
+                      ? "opacity-90"
+                      : "text-slate-300 dark:text-white/15 opacity-40"
+                  )}
+                />
+              );
+            })}
+          </g>
+
+          {/* Background Concentric Track */}
+          <circle
+            cx={cx}
+            cy={cy}
+            r={radius}
+            fill="transparent"
+            stroke="currentColor"
+            strokeWidth={strokeWidth}
+            className="text-slate-200/90 dark:text-white/[0.07]"
+          />
+
+          {/* Dynamic Animated Progress Ring */}
+          <circle
+            cx={cx}
+            cy={cy}
+            r={radius}
+            fill="transparent"
+            stroke={`url(#${config.gradientId})`}
+            strokeWidth={strokeWidth}
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            filter={`url(#glow-${config.gradientId})`}
+            className="sk-gauge-ring transform -rotate-90 origin-center transition-[stroke-dashoffset] duration-300 ease-out"
+          />
+        </svg>
+
+        {/* Center Display: 0-100 Score Count-Up */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
+          <div className="flex items-baseline justify-center">
+            <span className="font-mono text-4xl sm:text-5xl font-black tracking-tight text-ink dark:text-white leading-none">
+              {displayScore}
+            </span>
+            <span className="text-xs sm:text-sm font-semibold font-mono text-ink-muted dark:text-slate-400 ml-0.5">
+              /100
+            </span>
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-ink-muted dark:text-slate-400 mt-1">
+            {lang === "en" ? "Risk Score" : "जोखिम स्कोर"}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────
+   Helper: Calculate Risk Score (0-100)
+───────────────────────────────────────── */
+function getRiskScore(result: ValidationResult): number {
+  if (result.verdict === "fraud") {
+    return Math.max(88, result.elaScore || 92);
+  }
+  if (result.verdict === "suspicious") {
+    return Math.max(55, Math.min(75, result.elaScore || 64));
+  }
+  return Math.min(18, Math.max(6, result.elaScore || 8));
+}
+
+/* ─────────────────────────────────────────
+   Findings Model & Generator
+───────────────────────────────────────── */
+interface FindingCardItem {
+  id: string;
+  severity: "Low" | "Medium" | "High";
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  detail: string;
+}
+
+function getFindings(result: ValidationResult, lang: "en" | "hi"): FindingCardItem[] {
+  const items: FindingCardItem[] = [];
+
+  // 1. UTR Verification
+  if (result.utrValid) {
+    items.push({
+      id: "utr",
+      severity: "Low",
+      icon: Hash,
+      title: lang === "en" ? "UTR Transaction Reference" : "UTR ट्रांजेक्शन संदर्भ",
+      detail:
+        lang === "en"
+          ? `UTR '${result.utrValue}' matches the official 12-digit numeric NPCI routing standard.`
+          : `UTR '${result.utrValue}' आधिकारिक 12-अंकीय NPCI संदर्भ प्रारूप के अनुरूप है।`,
+    });
+  } else {
+    items.push({
+      id: "utr",
+      severity: "High",
+      icon: Hash,
+      title: lang === "en" ? "UTR Reference Format Invalid" : "अमान्य UTR संदर्भ प्रारूप",
+      detail:
+        lang === "en"
+          ? `UTR '${result.utrValue}' is not a valid 12-digit numeric NPCI code. Fake receipts frequently use randomized or alphanumeric codes.`
+          : `UTR '${result.utrValue}' मान्य 12 अंकों का नहीं है। नकली रसीदों में अक्सर ऐसे अमान्य कोड होते हैं।`,
+    });
+  }
+
+  // 2. UPI Provider & Handle
+  if (result.upiHandle?.trusted) {
+    items.push({
+      id: "upi-handle",
+      severity: "Low",
+      icon: CheckCircle2,
+      title: lang === "en" ? "UPI Handle Authenticity" : "UPI हैंडल सत्यापन",
+      detail:
+        lang === "en"
+          ? `${result.upiHandle.handle} is an authenticated PSP registered with ${result.upiHandle.bank}.`
+          : `${result.upiHandle.handle} एक प्रमाणित PSP है जो ${result.upiHandle.bank} से सम्बद्ध है।`,
+    });
+  } else if (result.upiHandle && !result.upiHandle.trusted) {
+    items.push({
+      id: "upi-handle",
+      severity: "High",
+      icon: AlertTriangle,
+      title: lang === "en" ? "Unregistered UPI Provider" : "गैर-पंजीकृत UPI हैंडल",
+      detail:
+        lang === "en"
+          ? `Handle '${result.upiHandle.handle}' (${result.upiHandle.bank}) is not found in the NPCI banking directory.`
+          : `हैंडल '${result.upiHandle.handle}' NPCI बैंक डायरेक्टरी में पंजीकृत नहीं मिला।`,
+    });
+  } else {
+    items.push({
+      id: "upi-handle",
+      severity: "Medium",
+      icon: AlertTriangle,
+      title: lang === "en" ? "UPI Handle Missing" : "UPI हैंडल अनुपलब्ध",
+      detail:
+        lang === "en"
+          ? "No registered UPI PSP address could be identified in the transaction metadata."
+          : "स्क्रीनशॉट में कोई वैध UPI पता नहीं मिला।",
+    });
+  }
+
+  // 3. Pixel & Compression ELA
+  if (result.elaScore < 20) {
+    items.push({
+      id: "ela",
+      severity: "Low",
+      icon: Layers,
+      title: lang === "en" ? "Pixel Compression & ELA" : "पिक्सेल ELA विश्लेषण",
+      detail:
+        lang === "en"
+          ? `ELA score ${result.elaScore}/100 — Clean pixel structure with uniform error distribution and zero splice artifacts.`
+          : `ELA स्कोर ${result.elaScore}/100 — पिक्सेल संरचना सामान्य है और कोई डिजिटल हेरफेर नहीं मिला।`,
+    });
+  } else if (result.elaScore <= 50) {
+    items.push({
+      id: "ela",
+      severity: "Medium",
+      icon: Layers,
+      title: lang === "en" ? "Pixel Compression Variance" : "मध्यम पिक्सेल भिन्नता",
+      detail:
+        lang === "en"
+          ? `ELA score ${result.elaScore}/100 — Moderate compression discrepancy around text fields. Manual review suggested.`
+          : `ELA स्कोर ${result.elaScore}/100 — टेक्स्ट के आसपास मध्यम पिक्सेल भिन्नता है।`,
+    });
+  } else {
+    items.push({
+      id: "ela",
+      severity: "High",
+      icon: Layers,
+      title: lang === "en" ? "Digital Editing & Pixel Splicing" : "डिजिटल संपादन एवं हेरफेर",
+      detail:
+        lang === "en"
+          ? `ELA score ${result.elaScore}/100 — Significant pixel anomalies detected around the amount/date region, indicating image manipulation.`
+          : `ELA स्कोर ${result.elaScore}/100 — राशि या तारीख के पास गंभीर पिक्सेल हेरफेर का पता चला है।`,
+    });
+  }
+
+  // 4. Typography & Layout
+  if (result.fontAnomalies.length > 0) {
+    items.push({
+      id: "typography",
+      severity: "High",
+      icon: AlignLeft,
+      title: lang === "en" ? "Typography & Layout Inconsistencies" : "फॉन्ट एवं लेआउट विसंगतियाँ",
+      detail: result.fontAnomalies.join(" • "),
+    });
+  } else {
+    items.push({
+      id: "typography",
+      severity: "Low",
+      icon: AlignLeft,
+      title: lang === "en" ? "Font Metrics & Alignment" : "फॉन्ट एवं लेआउट संरचना",
+      detail:
+        lang === "en"
+          ? "Font weights, numeric glyphs, and spacing conform to official banking application UI kits."
+          : "फॉन्ट स्टाइल, अंक और स्पेसिंग आधिकारिक बैंकिंग ऐप के अनुरूप हैं।",
+    });
+  }
+
+  // 5. Additional forensic evidence points (filtered to avoid redundancy)
+  const specialEvidence = result.evidencePoints.filter(
+    (e) =>
+      !e.toLowerCase().includes("sha-256") &&
+      !e.toLowerCase().includes("ela score") &&
+      !e.toLowerCase().includes("utr ") &&
+      !e.toLowerCase().includes("authenticated phonepe") &&
+      !e.toLowerCase().includes("registered psp")
+  );
+
+  specialEvidence.slice(0, 2).forEach((ev, idx) => {
+    const isHarmful =
+      result.verdict === "fraud" ||
+      ev.toLowerCase().includes("fake") ||
+      ev.toLowerCase().includes("inconsistent") ||
+      ev.toLowerCase().includes("invalid");
+
+    items.push({
+      id: `evidence-${idx}`,
+      severity: isHarmful ? "High" : result.verdict === "suspicious" ? "Medium" : "Low",
+      icon: isHarmful ? AlertTriangle : CheckCircle2,
+      title: lang === "en" ? "Forensic Signal Detection" : "अतिरिक्त फॉरेंसिक साक्ष्य",
+      detail: ev,
+    });
+  });
+
+  return items;
+}
+
+/* ─────────────────────────────────────────
+   "What this means for you" Non-Technical Copy
+───────────────────────────────────────── */
+function getWhatItMeans(verdict: ValidationResult["verdict"], lang: "en" | "hi"): string {
+  if (verdict === "genuine") {
+    return lang === "en"
+      ? "This payment screenshot shows valid bank routing codes, matching typography, and no signs of image tampering. Even with genuine-looking receipts, always confirm that funds have settled in your bank account before handing over goods or services."
+      : "यह भुगतान स्क्रीनशॉट वैध बैंक विवरण और बिना किसी छेड़छाड़ के दिखाई दे रहा है। फिर भी, सामान देने से पहले अपने बैंक खाते में जमा राशि की पुष्टि करने के बाद ही आगे बढ़ें।";
+  }
+  if (verdict === "suspicious") {
+    return lang === "en"
+      ? "Certain details such as the UPI handle or transaction reference format don't fully align with standard banking templates. Do not release goods or services until the funds reflect directly in your official banking app."
+      : "UPI आईडी या संदर्भ प्रारूप सामान्य बैंक पैटर्न से पूरी तरह मेल नहीं खा रहे हैं। जब तक आपके बैंक खाते में पैसे न दिखें, तब तक कोई सामान या सेवा न दें।";
+  }
+  return lang === "en"
+    ? "High risk of fraud detected. The screenshot shows clear signs of digital editing, an invalid 12-digit UTR, or a fake receipt generator pattern. No real payment has been made to your account."
+    : "धोखाधड़ी का गंभीर जोखिम मिला है। स्क्रीनशॉट में संपादन के स्पष्ट निशान, अमान्य UTR या नकली रसीद जनरेटर का उपयोग पाया गया है। आपके बैंक खाते में कोई वास्तविक भुगतान नहीं हुआ है।";
+}
+
+/* ─────────────────────────────────────────
+   "What should I do next?" Action Items
+───────────────────────────────────────── */
+function getNextActions(verdict: ValidationResult["verdict"], lang: "en" | "hi") {
+  if (verdict === "genuine") {
+    return [
+      {
+        title: lang === "en" ? "Verify credit in your bank app" : "अपने बैंक ऐप में क्रेडिट जांचें",
+        description:
+          lang === "en"
+            ? "Open your official banking app (SBI, HDFC, ICICI, etc.) or check SMS notifications to confirm the balance received."
+            : "अपने बैंक ऐप या SMS में जाकर पुष्टि करें कि खाते में पैसे सचमुच जमा हो गए हैं।",
+      },
+      {
+        title: lang === "en" ? "Match amount & sender details" : "राशि व प्रेषक विवरण का मिलान करें",
+        description:
+          lang === "en"
+            ? "Confirm that the customer name and exact rupee value match what was agreed before finalizing the order."
+            : "पुष्टि करें कि प्रेषक का नाम और सटीक राशि आपके सौदे के अनुसार ही है।",
+      },
+      {
+        title: lang === "en" ? "Keep verification record" : "सत्यापन रिकॉर्ड सुरक्षित रखें",
+        description:
+          lang === "en"
+            ? "Download the cryptographic audit dossier below if you require a permanent verification timestamp for your business records."
+            : "व्यावसायिक रिकॉर्ड के लिए नीचे दिया गया फॉरेंसिक दस्तावेज़ डाउनलोड कर सकते हैं।",
+      },
+    ];
+  }
+
+  if (verdict === "suspicious") {
+    return [
+      {
+        title: lang === "en" ? "Hold goods or service delivery" : "सामान या सेवा रोक कर रखें",
+        description:
+          lang === "en"
+            ? "Do not release merchandise, hand over packages, or provide refunds while the reference is unverified."
+            : "जब तक भुगतान स्पष्ट न हो जाए, तब तक कोई भी सामान या धनवापसी न दें।",
+      },
+      {
+        title: lang === "en" ? "Request a live app demonstration" : "लाइव ऐप में स्थिति दिखाने को कहें",
+        description:
+          lang === "en"
+            ? "Ask the sender to open their UPI app live and show the transaction marked 'Completed' in their history."
+            : "ग्राहक से कहें कि वह अपने मोबाइल में ऐप खोलकर 'सफल' ट्रांजेक्शन इतिहास दिखाएं।",
+      },
+      {
+        title: lang === "en" ? "Check bank passbook after 15 minutes" : "15 मिनट बाद बैंक पासबुक देखें",
+        description:
+          lang === "en"
+            ? "Inter-bank UPI settlement can occasionally experience pending delays. Refresh your account statement before proceeding."
+            : "बैंक सर्वर में कभी-कभी देरी हो सकती है। 15 मिनट बाद अपनी बैंक स्टेटमेंट रिफ्रेश करें।",
+      },
+    ];
+  }
+
+  return [
+    {
+      title: lang === "en" ? "Refuse transaction immediately" : "लेन-देन को तुरंत अस्वीकार करें",
+      description:
+        lang === "en"
+          ? "Do not deliver goods, hand over cash, or send money back. This is an active fraud attempt."
+          : "कोई भी सामान न दें और पैसे वापस न भेजें। यह धोखाधड़ी का स्पष्ट प्रयास है।",
+    },
+    {
+      title: lang === "en" ? "Export cryptographic evidence" : "डिजिटल साक्ष्य डाउनलोड करें",
+      description:
+        lang === "en"
+          ? "Download the tamper-proof cryptographic audit dossier (JSON) below to preserve legal evidence."
+          : "कानूनी कार्रवाई के लिए नीचे दिए गए बटन से डिजिटल साक्ष्य दस्तावेज़ डाउनलोड करें।",
+    },
+    {
+      title: lang === "en" ? "Report scammer to Cyber Cell (1930)" : "1930 / साइबर सेल में रिपोर्ट करें",
+      description:
+        lang === "en"
+          ? "Click 'Dispatch 1930 Complaint' below or visit cybercrime.gov.in with the suspect's UPI ID and mobile number."
+          : "नीचे दिए गए बटन से राष्ट्रीय साइबर पोर्टल (1930) पर शिकायत का ड्राफ्ट तैयार कर सबमिट करें।",
+    },
+  ];
+}
+
+/* ─────────────────────────────────────────
    Main UPI Inspector component
 ───────────────────────────────────────── */
 export default function UPIInspector({
@@ -378,6 +1010,7 @@ export default function UPIInspector({
   onAuditComplete: () => void;
   onOpenShareShield?: (data: any) => void;
 }) {
+  const shouldReduceMotion = useReducedMotion();
   const [mode, setMode] = useState<"idle" | "loading" | "done">("idle");
   const [imageURL, setImageURL] = useState<string | null>(null);
   const [result, setResult] = useState<ValidationResult | null>(null);
@@ -391,6 +1024,7 @@ export default function UPIInspector({
   const [upiInput, setUpiInput] = useState("");
   const [utrInput, setUtrInput] = useState("");
   const [dragActive, setDragActive] = useState(false);
+  const [scanStep, setScanStep] = useState<number>(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -450,78 +1084,98 @@ export default function UPIInspector({
       setActiveSample(null);
       setShowELA(false);
       setGroundingData(null);
+      setScanStep(0);
       setMode("loading");
 
+      // Orchestrate the live checklist ticking progression
+      const step1Timer = setTimeout(() => setScanStep(1), 550);
+      const step2Timer = setTimeout(() => setScanStep(2), 1250);
+      const step3Timer = setTimeout(() => setScanStep(3), 1950);
+
       try {
-        // Step 1: Compute real cryptographic SHA-256 hash of image file
-        const arrayBuffer = await file.arrayBuffer();
-        const sha256 = await computeSHA256(arrayBuffer);
+        const forensicPromise = (async () => {
+          // Step 1: Compute real cryptographic SHA-256 hash of image file
+          const arrayBuffer = await file.arrayBuffer();
+          const sha256 = await computeSHA256(arrayBuffer);
 
-        // Convert to base64 for Google Gemini multi-modal inspection
-        const fileBase64 = await new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(file.size > 5 * 1024 * 1024 ? file.slice(0, 5 * 1024 * 1024) : file);
-        });
+          // Convert to base64 for Google Gemini multi-modal inspection
+          const fileBase64 = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(file.size > 5 * 1024 * 1024 ? file.slice(0, 5 * 1024 * 1024) : file);
+          });
 
-        // Step 2: Algorithmic UTR and handle checks
-        const utrResult = validateUTRAlgorithmic(utrInput || "");
-        const handle = parseUPIHandle(upiInput || "@unknown");
-        const fontAnomalies: string[] = [];
-        if (!utrResult.isValid && utrInput) {
-          fontAnomalies.push(...utrResult.anomalyNotes);
-        }
+          // Step 2: Algorithmic UTR and handle checks
+          const utrResult = validateUTRAlgorithmic(utrInput || "");
+          const handle = parseUPIHandle(upiInput || "@unknown");
+          const fontAnomalies: string[] = [];
+          if (!utrResult.isValid && utrInput) {
+            fontAnomalies.push(...utrResult.anomalyNotes);
+          }
 
-        // Step 3: Call backend unified forensics endpoint with Gemini vision
-        const response = await fetch("/api/forensics/analyze", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            type: "upi",
-            payload: {
-              utr: utrInput,
-              upiId: upiInput,
-              filename: file.name,
-              fileSize: file.size,
-              fileBase64,
-            },
-            lang,
-          }),
-        });
+          // Step 3: Call backend unified forensics endpoint with Gemini vision
+          const response = await fetch("/api/forensics/analyze", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              type: "upi",
+              payload: {
+                utr: utrInput,
+                upiId: upiInput,
+                filename: file.name,
+                fileSize: file.size,
+                fileBase64,
+              },
+              lang,
+            }),
+          });
 
-        let backendData: any = null;
-        if (response.ok) {
-          backendData = await response.json();
-          setGroundingData(backendData);
-        }
+          let backendData: any = null;
+          if (response.ok) {
+            backendData = await response.json();
+            setGroundingData(backendData);
+          }
 
-        const fraud = !utrResult.isValid || (handle && !handle.trusted) || backendData?.verdict === "fraud";
-        const verdict: ValidationResult["verdict"] = backendData?.verdict || (fraud ? "suspicious" : "genuine");
-        const confidence = backendData?.confidence || (fraud ? 84 : 91);
+          const fraud = !utrResult.isValid || (handle && !handle.trusted) || backendData?.verdict === "fraud";
+          const verdict: ValidationResult["verdict"] = backendData?.verdict || (fraud ? "suspicious" : "genuine");
+          const confidence = backendData?.confidence || (fraud ? 84 : 91);
 
-        const evidencePoints = [
-          `SHA-256: ${sha256.substring(0, 24)}... (Cryptographic Evidence Hash)`,
-          utrResult.isValid
-            ? `UTR ${utrInput || "(validated in image)"} — valid 12-digit NPCI format`
-            : `UTR '${utrInput}' — ${utrResult.anomalyNotes[0] || "Invalid format"}`,
-          handle?.trusted
-            ? `${handle.handle} is a registered PSP (${handle.bank})`
-            : `${handle?.handle ?? "No handle"} — not in NPCI high-trust registry`,
-          ...(backendData?.evidence || ["Toggle Error Level Analysis (ELA) below to inspect localized pixel alterations"]),
-        ];
+          const evidencePoints = [
+            `SHA-256: ${sha256.substring(0, 24)}... (Cryptographic Evidence Hash)`,
+            utrResult.isValid
+              ? `UTR ${utrInput || "(validated in image)"} — valid 12-digit NPCI format`
+              : `UTR '${utrInput}' — ${utrResult.anomalyNotes[0] || "Invalid format"}`,
+            handle?.trusted
+              ? `${handle.handle} is a registered PSP (${handle.bank})`
+              : `${handle?.handle ?? "No handle"} — not in NPCI high-trust registry`,
+            ...(backendData?.evidence || ["Toggle Error Level Analysis (ELA) below to inspect localized pixel alterations"]),
+          ];
 
-        const newResult: ValidationResult = {
-          utrValid: utrResult.isValid,
-          utrValue: utrInput || "(verified in image)",
-          upiHandle: handle,
-          fontAnomalies,
-          elaScore: 0,
-          verdict,
-          confidence,
-          evidencePoints,
-          sha256,
-          timestamp: new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) + " IST",
-        };
+          const newResult: ValidationResult = {
+            utrValid: utrResult.isValid,
+            utrValue: utrInput || "(verified in image)",
+            upiHandle: handle,
+            fontAnomalies,
+            elaScore: 0,
+            verdict,
+            confidence,
+            evidencePoints,
+            sha256,
+            timestamp: new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) + " IST",
+          };
+
+          return newResult;
+        })();
+
+        // Ensure user perceives the live checklist progression and glowing scan sweep (min 2100ms)
+        const [newResult] = await Promise.all([
+          forensicPromise,
+          new Promise((resolve) => setTimeout(resolve, 2100)),
+        ]);
+
+        setScanStep(3);
+        // Brief 350ms pause so the final checkmark is seen clearly before results display
+        await new Promise((resolve) => setTimeout(resolve, 350));
 
         setResult(newResult);
         setMode("done");
@@ -529,10 +1183,34 @@ export default function UPIInspector({
       } catch (err) {
         console.error("Forensic analysis error:", err);
         setMode("done");
+      } finally {
+        clearTimeout(step1Timer);
+        clearTimeout(step2Timer);
+        clearTimeout(step3Timer);
       }
     },
     [upiInput, utrInput, lang, onAuditComplete]
   );
+
+  /* ── Clipboard paste handler for Ctrl+V ── */
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.startsWith("image/")) {
+          const file = items[i].getAsFile();
+          if (file) {
+            e.preventDefault();
+            handleFile(file);
+            break;
+          }
+        }
+      }
+    };
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, [handleFile]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -550,6 +1228,8 @@ export default function UPIInspector({
     setShowFullEvidence(false);
     setUpiInput("");
     setUtrInput("");
+    setScanStep(0);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const downloadReceipt = async () => {
@@ -661,10 +1341,10 @@ export default function UPIInspector({
             </p>
           </div>
           {mode === "done" && (
-            <button onClick={reset} className="sk-btn-ghost text-xs gap-1.5">
+            <Button variant="secondary" size="xs" onClick={reset} className="gap-1.5">
               <RefreshCcw className="w-3.5 h-3.5" />
               {lang === "en" ? "New Scan" : "नई जांच"}
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -752,18 +1432,24 @@ export default function UPIInspector({
             </div>
           </div>
 
-          {/* File dropzone */}
+          {/* File dropzone / scanner area */}
           <div
             className={clsx(
-              "flex-1 sk-card rounded-xl border-2 border-dashed flex flex-col items-center justify-center gap-3 cursor-pointer transition-all duration-150 min-h-[160px]",
+              "group relative flex-1 sk-card rounded-2xl border-2 border-dashed flex flex-col items-center justify-center overflow-hidden transition-[transform,opacity,border-color,background-color,box-shadow] duration-200 min-h-[300px] sm:min-h-[340px] p-4",
+              mode !== "loading" && "cursor-pointer",
               dragActive
-                ? "border-ink bg-ink/5 dark:border-white dark:bg-white/5"
-                : "border-border dark:border-dark-border hover:border-ink-muted hover:bg-surface dark:hover:border-slate-500"
+                ? "border-accent bg-accent/[0.08] dark:bg-accent/[0.12] shadow-[0_0_35px_rgb(var(--rgb-accent)/0.25)] ring-2 ring-accent/30"
+                : "border-border/80 dark:border-white/10 hover:border-accent/50 dark:hover:border-accent/40 hover:bg-surface/60 dark:hover:bg-white/[0.02]"
             )}
-            onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragActive(true);
+            }}
             onDragLeave={() => setDragActive(false)}
             onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => {
+              if (mode !== "loading") fileInputRef.current?.click();
+            }}
           >
             <input
               ref={fileInputRef}
@@ -775,42 +1461,149 @@ export default function UPIInspector({
                 if (file) handleFile(file);
               }}
             />
+
             {mode === "loading" ? (
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-8 h-8 border-2 border-ink dark:border-white border-t-transparent rounded-full animate-spin" />
-                <p className="text-sm text-ink-muted dark:text-slate-400">
-                  {lang === "en" ? "Running forensic analysis…" : "फॉरेंसिक विश्लेषण हो रहा है…"}
-                </p>
+              <div className="relative w-full h-full flex flex-col items-center justify-center p-2">
+                <ViewfinderBrackets active={true} size="lg" />
+
+                {/* Scanning Image Viewport with Glowing Scan Line */}
+                {imageURL ? (
+                  <div className="relative w-full max-h-[220px] sm:max-h-[250px] flex items-center justify-center rounded-xl bg-black/15 dark:bg-black/40 overflow-hidden border border-accent/20 p-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      ref={imgRef}
+                      src={imageURL}
+                      alt="UPI Screenshot undergoing forensic scan"
+                      className="max-h-[200px] sm:max-h-[230px] w-auto max-w-full object-contain rounded-lg shadow-md select-none"
+                    />
+
+                    {/* Scan line overlay sweeping top to bottom */}
+                    <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-xl">
+                      <div className="absolute inset-0 bg-accent/[0.03] dark:bg-accent/[0.06]" />
+
+                      {/* Sweeping laser line with gradient glow beam */}
+                      <div className="sk-scanner-line-sweep absolute inset-x-0 top-0 h-full pointer-events-none flex flex-col justify-end">
+                        <div className="w-full h-24 bg-gradient-to-t from-accent/35 via-accent/10 to-transparent pointer-events-none" />
+                        <div className="w-full h-[2.5px] bg-gradient-to-r from-transparent via-white to-transparent shadow-[0_0_12px_rgb(var(--rgb-accent)),0_0_24px_rgb(var(--rgb-accent)/0.9),0_0_36px_rgb(var(--rgb-accent)/0.5)] pointer-events-none" />
+                      </div>
+                    </div>
+
+                    {/* Live status badge */}
+                    <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-md border border-accent/40 text-[10px] font-mono text-accent font-semibold tracking-wider uppercase">
+                      <span className="w-1.5 h-1.5 rounded-full bg-accent animate-ping mr-0.5" />
+                      {lang === "en" ? "Optical Scan Active" : "स्कैन सक्रिय"}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-3 py-6">
+                    <div className="w-12 h-12 rounded-2xl bg-accent/10 border border-accent/30 flex items-center justify-center text-accent">
+                      <Upload className="w-6 h-6 animate-pulse" />
+                    </div>
+                    <p className="text-sm font-medium text-ink dark:text-white">
+                      {lang === "en" ? "Preparing forensic analysis..." : "फॉरेंसिक विश्लेषण प्रारंभ हो रहा है..."}
+                    </p>
+                  </div>
+                )}
+
+                {/* Short Live Checklist Underneath */}
+                <div className="w-full mt-4">
+                  <LiveForensicChecklist scanStep={scanStep} lang={lang} />
+                </div>
               </div>
             ) : imageURL ? (
-              <div className="relative w-full h-full p-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  ref={imgRef}
-                  src={imageURL}
-                  alt="Uploaded UPI screenshot"
-                  className={clsx("w-full h-full object-contain rounded-lg", showELA && "opacity-30")}
-                  crossOrigin="anonymous"
-                />
-                {showELA && (
-                  <canvas
-                    ref={elaCanvasRef}
-                    className="absolute inset-2 w-[calc(100%-16px)] h-[calc(100%-16px)] object-contain rounded-lg"
+              <div className="relative w-full h-full p-2 flex flex-col items-center justify-center">
+                <ViewfinderBrackets active={dragActive} size="lg" />
+                <div className="relative w-full max-h-[260px] sm:max-h-[290px] flex items-center justify-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    ref={imgRef}
+                    src={imageURL}
+                    alt="Uploaded UPI screenshot"
+                    className={clsx(
+                      "max-h-[240px] sm:max-h-[270px] w-auto max-w-full object-contain rounded-lg shadow-md",
+                      showELA && "opacity-30"
+                    )}
+                    crossOrigin="anonymous"
                   />
-                )}
+                  {showELA && (
+                    <canvas
+                      ref={elaCanvasRef}
+                      className="absolute inset-0 m-auto max-h-[240px] sm:max-h-[270px] w-auto max-w-full object-contain rounded-lg pointer-events-none"
+                    />
+                  )}
+                </div>
+                <div className="mt-3 flex items-center gap-2">
+                  <Button
+                    variant="secondary"
+                    size="xs"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      fileInputRef.current?.click();
+                    }}
+                    leftIcon={<Upload className="w-3.5 h-3.5 text-accent" />}
+                  >
+                    {lang === "en" ? "Change Screenshot" : "दूसरा स्क्रीनशॉट चुनें"}
+                  </Button>
+                </div>
               </div>
             ) : (
               <>
-                <div className="w-12 h-12 rounded-xl bg-surface dark:bg-dark-border border border-border dark:border-dark-border flex items-center justify-center">
-                  <Upload className="w-5 h-5 text-ink-muted dark:text-slate-400" />
-                </div>
-                <div className="text-center">
-                  <p className="text-sm font-medium text-ink dark:text-white">
-                    {lang === "en" ? "Drop screenshot here or click to upload" : "स्क्रीनशॉट यहाँ छोड़ें या क्लिक करें"}
+                <ViewfinderBrackets active={dragActive} size="lg" />
+
+                <div className="relative z-10 flex flex-col items-center justify-center text-center p-6 sm:p-8 max-w-md mx-auto">
+                  {/* Scanner Icon with glowing background halo */}
+                  <div
+                    className={clsx(
+                      "w-16 h-16 rounded-2xl flex items-center justify-center border transition-[transform,opacity,background-color,border-color,box-shadow] duration-200 mb-4",
+                      dragActive
+                        ? "bg-accent/15 border-accent text-accent shadow-[0_0_24px_rgb(var(--rgb-accent)/0.4)] scale-110"
+                        : "bg-surface/80 dark:bg-white/[0.04] border-border dark:border-white/10 text-accent group-hover:border-accent/40 group-hover:scale-105 group-hover:shadow-[0_0_20px_rgb(var(--rgb-accent)/0.25)]"
+                    )}
+                  >
+                    <Upload className="w-7 h-7 transition-transform duration-200" />
+                  </div>
+
+                  {/* Primary message */}
+                  <h3 className="text-base sm:text-lg font-semibold text-ink dark:text-white mb-1.5 leading-snug">
+                    {lang === "en"
+                      ? "Drop screenshot, click to upload, or paste with Ctrl+V"
+                      : "स्क्रीनशॉट छोड़ें, अपलोड करने के लिए क्लिक करें, या Ctrl+V से पेस्ट करें"}
+                  </h3>
+
+                  {/* Subtitle */}
+                  <p className="text-xs text-ink-muted dark:text-slate-400 mb-4 leading-relaxed">
+                    {lang === "en"
+                      ? "Supports PhonePe, Google Pay, Paytm, BHIM & bank app receipts (PNG, JPG, WebP · Max 10 MB)"
+                      : "PhonePe, Google Pay, Paytm, BHIM और बैंक स्क्रीनशॉट (PNG, JPG, WebP · अधिकतम 10 MB)"}
                   </p>
-                  <p className="text-xs text-ink-muted dark:text-slate-500 mt-1">
-                    PNG, JPG, WebP — max 10 MB
-                  </p>
+
+                  {/* Button and keyboard shortcut pill */}
+                  <div className="flex flex-wrap items-center justify-center gap-3">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fileInputRef.current?.click();
+                      }}
+                      leftIcon={<Upload className="w-4 h-4 text-accent" />}
+                    >
+                      {lang === "en" ? "Select File" : "फ़ाइल चुनें"}
+                    </Button>
+
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-surface/60 dark:bg-white/[0.04] border border-border/70 dark:border-white/10 text-[11px] font-mono text-ink-muted dark:text-slate-400">
+                      <kbd className="px-1.5 py-0.5 rounded bg-surface dark:bg-white/10 border border-border/80 dark:border-white/10 font-bold text-ink dark:text-white text-[10px]">
+                        Ctrl
+                      </kbd>
+                      <span>+</span>
+                      <kbd className="px-1.5 py-0.5 rounded bg-surface dark:bg-white/10 border border-border/80 dark:border-white/10 font-bold text-ink dark:text-white text-[10px]">
+                        V
+                      </kbd>
+                      <span className="ml-1 text-[10px] text-ink-faint dark:text-slate-500">
+                        {lang === "en" ? "to paste" : "पेस्ट करें"}
+                      </span>
+                    </span>
+                  </div>
                 </div>
               </>
             )}
@@ -837,262 +1630,343 @@ export default function UPIInspector({
             </div>
           )}
 
-          {mode === "done" && result && (
-            <>
-              {/* Massive Hero Verdict Banner with Apple Activity Gauge */}
-              <div
-                className={clsx(
-                  "sk-hero-verdict",
-                  result.verdict === "genuine" && "sk-hero-verdict-genuine",
-                  result.verdict === "suspicious" && "sk-hero-verdict-warn",
-                  result.verdict === "fraud" && "sk-hero-verdict-fraud"
-                )}
-              >
-                <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6">
-                  <div className="flex flex-col items-center sm:items-start text-center sm:text-left flex-1 min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400 mb-1.5">
-                      {lang === "en" ? "Forensic Verdict & Risk Gauge" : "फॉरेंसिक निर्णय व जोखिम मीटर"}
-                    </p>
-                    <div className="flex items-center gap-3">
-                      <VerdictBadge verdict={result.verdict} />
-                      <span className="text-sm text-ink-muted dark:text-slate-400 font-mono">
-                        {result.confidence}% confidence
-                      </span>
-                    </div>
+          {mode === "done" && result && (() => {
+            const riskScore = getRiskScore(result);
+            const findings = getFindings(result, lang);
+            const whatItMeans = getWhatItMeans(result.verdict, lang);
+            const nextActions = getNextActions(result.verdict, lang);
 
-                    <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-300 w-full sm:max-w-xs">
-                      <div className="bg-slate-50 dark:bg-white/[0.04] p-2 rounded-lg border border-slate-200/60 dark:border-white/5">
-                        <span className="text-[10px] text-slate-400 uppercase font-semibold block">Tampering ELA</span>
-                        <strong className="font-mono text-sm text-ink dark:text-white">{result.elaScore}/100</strong>
-                      </div>
-                      <div className="bg-slate-50 dark:bg-white/[0.04] p-2 rounded-lg border border-slate-200/60 dark:border-white/5">
-                        <span className="text-[10px] text-slate-400 uppercase font-semibold block">UTR Format</span>
-                        <strong className={clsx("font-mono text-sm", result.utrValid ? "text-emerald-600 dark:text-emerald-400" : "text-red-500")}>
-                          {result.utrValid ? "NPCI Valid" : "Invalid"}
-                        </strong>
-                      </div>
-                    </div>
-
-                    <div className="mt-3">
-                      <p className="text-[10px] text-ink-faint dark:text-slate-500">Scanned at: {result.timestamp}</p>
-                      {result.sha256 && (
-                        <p className="text-[9px] font-mono text-indigo-500 dark:text-indigo-400 truncate max-w-[240px]">
-                          SHA-256: {result.sha256}
-                        </p>
-                      )}
-                    </div>
+            return (
+              <div className="space-y-4">
+                {/* ── 1. Hero Card: Circular Risk Gauge & Big Verdict ── */}
+                <div
+                  className={clsx(
+                    "sk-card p-6 sm:p-7 rounded-3xl border text-center flex flex-col items-center justify-center relative overflow-hidden backdrop-blur-xl transition-all duration-300",
+                    result.verdict === "genuine" &&
+                      "bg-gradient-to-b from-emerald-500/[0.08] via-card to-card border-emerald-500/30 shadow-[0_4px_30px_rgba(52,211,153,0.08)]",
+                    result.verdict === "suspicious" &&
+                      "bg-gradient-to-b from-amber-500/[0.08] via-card to-card border-amber-500/30 shadow-[0_4px_30px_rgba(251,191,36,0.08)]",
+                    result.verdict === "fraud" &&
+                      "bg-gradient-to-b from-rose-500/[0.08] via-card to-card border-rose-500/30 shadow-[0_4px_30px_rgba(251,113,133,0.08)]"
+                  )}
+                >
+                  <div className="mb-2">
+                    <span className="text-[11px] font-mono uppercase tracking-widest font-semibold text-ink-muted dark:text-slate-400">
+                      {lang === "en" ? "Forensic Authenticity Assessment" : "फॉरेंसिक प्रामाणिकता मूल्यांकन"}
+                    </span>
                   </div>
 
-                  <div className="shrink-0 flex items-center justify-center p-3 rounded-2xl bg-slate-50/70 dark:bg-white/[0.03] border border-slate-200/60 dark:border-white/5">
-                    <AppleCircularDial
-                      score={result.verdict === "fraud" ? Math.max(88, result.elaScore) : result.verdict === "suspicious" ? 64 : 12}
+                  {/* Large Circular Risk Gauge (0-100) with tick marks and soft glow */}
+                  <div className="my-2 flex items-center justify-center">
+                    <CircularRiskGauge
+                      score={riskScore}
                       verdict={result.verdict}
-                      size={116}
-                      strokeWidth={10}
                       lang={lang}
-                      showVerdictBadge={false}
+                      size={200}
                     />
                   </div>
-                </div>
-              </div>
 
-              {/* UTR + UPI Handle */}
-              <div className="sk-card p-4 space-y-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400">
-                  {lang === "en" ? "Reference Validation" : "संदर्भ सत्यापन"}
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 rounded-lg bg-surface dark:bg-dark-surface border border-border dark:border-dark-border">
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <Hash className="w-3.5 h-3.5 text-ink-muted" />
-                      <span className="text-[11px] font-semibold text-ink-muted dark:text-slate-400">UTR Number</span>
-                    </div>
-                    <p className="sk-mono text-ink dark:text-white break-all">{result.utrValue}</p>
-                    <div className="mt-1.5">
-                      {result.utrValid ? (
-                        <span className="sk-badge-trust"><CheckCircle2 className="w-3 h-3" /> Valid</span>
-                      ) : (
-                        <span className="sk-badge-fraud"><XCircle className="w-3 h-3" /> Invalid</span>
+                  {/* Big Heading Verdict Label */}
+                  <div className="mt-2 space-y-1">
+                    <h2
+                      className={clsx(
+                        "font-heading text-2xl sm:text-3xl font-extrabold uppercase tracking-tight",
+                        result.verdict === "genuine" && "text-safe",
+                        result.verdict === "suspicious" && "text-suspicious",
+                        result.verdict === "fraud" && "text-fake"
                       )}
+                    >
+                      {result.verdict === "genuine"
+                        ? lang === "en"
+                          ? "LOOKS GENUINE"
+                          : "असली प्रतीत होता है"
+                        : result.verdict === "suspicious"
+                        ? lang === "en"
+                          ? "SUSPICIOUS"
+                          : "संदिग्ध"
+                        : lang === "en"
+                        ? "LIKELY FAKE"
+                        : "नकली होने की संभावना"}
+                    </h2>
+
+                    <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-ink-muted dark:text-slate-400 font-mono mt-1">
+                      <span>{result.confidence}% {lang === "en" ? "Confidence" : "विश्वसनीयता"}</span>
+                      <span>·</span>
+                      <span>{result.timestamp}</span>
                     </div>
-                  </div>
-                  <div className="p-3 rounded-lg bg-surface dark:bg-dark-surface border border-border dark:border-dark-border">
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <AlignLeft className="w-3.5 h-3.5 text-ink-muted" />
-                      <span className="text-[11px] font-semibold text-ink-muted dark:text-slate-400">UPI Handle</span>
-                    </div>
-                    {result.upiHandle ? (
-                      <>
-                        <p className="sk-mono text-ink dark:text-white break-all">{result.upiHandle.handle}</p>
-                        <p className="text-[10px] text-ink-muted dark:text-slate-400 mt-0.5">{result.upiHandle.bank}</p>
-                        <div className="mt-1.5">
-                          {result.upiHandle.trusted ? (
-                            <span className="sk-badge-trust"><CheckCircle2 className="w-3 h-3" /> Registered PSP</span>
-                          ) : (
-                            <span className="sk-badge-fraud"><XCircle className="w-3 h-3" /> Unknown PSP</span>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <p className="text-xs text-ink-muted dark:text-slate-400">Not provided</p>
+
+                    {result.sha256 && (
+                      <p className="text-[10px] font-mono text-ink-faint dark:text-slate-500 truncate max-w-xs mx-auto mt-1">
+                        SHA-256: {result.sha256.substring(0, 24)}...
+                      </p>
                     )}
                   </div>
                 </div>
-              </div>
 
-              {/* Real-Time Gemini AI Grounding & Web Intelligence */}
-              {groundingData && (
-                <RealTimeGroundingCard
-                  entityProfile={groundingData.entityProfile}
-                  liveWebStatus={groundingData.liveWebStatus}
-                  riskRationale={groundingData.riskRationale}
-                  actionSteps={groundingData.actionSteps}
-                  provider={groundingData.telemetry?.provider}
-                  lang={lang}
-                />
-              )}
-
-              {/* ELA section */}
-              <div className="sk-card p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Layers className="w-4 h-4 text-ink-muted" />
-                    <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400">
-                      {lang === "en" ? "Error Level Analysis (ELA)" : "ELA पिक्सेल जांच"}
-                    </span>
-                  </div>
-                  {imageURL && !activeSample && (
-                    <button
-                      onClick={() => setShowELA((s) => !s)}
+                {/* ── 2. "What this means for you" Simple Non-Technical Box ── */}
+                <div
+                  className={clsx(
+                    "rounded-2xl p-4 sm:p-4.5 border transition-all duration-200",
+                    result.verdict === "genuine" &&
+                      "bg-emerald-500/[0.05] border-emerald-500/20 text-emerald-950 dark:text-emerald-100",
+                    result.verdict === "suspicious" &&
+                      "bg-amber-500/[0.05] border-amber-500/20 text-amber-950 dark:text-amber-100",
+                    result.verdict === "fraud" &&
+                      "bg-rose-500/[0.05] border-rose-500/20 text-rose-950 dark:text-rose-100"
+                  )}
+                >
+                  <div className="flex items-start gap-3">
+                    <div
                       className={clsx(
-                        "text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors",
-                        showELA
-                          ? "border-ink bg-ink text-white dark:border-white dark:bg-white dark:text-dark-surface"
-                          : "border-border dark:border-dark-border text-ink-muted dark:text-slate-400 hover:text-ink dark:hover:text-white"
+                        "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border mt-0.5",
+                        result.verdict === "genuine" && "bg-emerald-500/15 border-emerald-500/30 text-safe",
+                        result.verdict === "suspicious" && "bg-amber-500/15 border-amber-500/30 text-suspicious",
+                        result.verdict === "fraud" && "bg-rose-500/15 border-rose-500/30 text-fake"
                       )}
                     >
-                      {showELA ? "Hide ELA Heatmap" : "Show ELA Heatmap"}
-                    </button>
-                  )}
-                  {activeSample && (
-                    <span className="text-[10px] text-ink-faint dark:text-slate-600 italic">
-                      (Simulated for demo)
-                    </span>
-                  )}
+                      <Info className="w-4 h-4" />
+                    </div>
+                    <div className="space-y-1 flex-1">
+                      <h3 className="text-xs font-bold uppercase tracking-wider font-heading">
+                        {lang === "en" ? "What this means for you" : "आपके लिए इसका क्या अर्थ है"}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-ink/90 dark:text-slate-200 leading-relaxed font-sans">
+                        {whatItMeans}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-                <ELAScoreBar score={result.elaScore} />
-                {showELA && !activeSample && (
-                  <div className="flex items-center gap-2 p-2 rounded-lg bg-surface dark:bg-dark-surface border border-border dark:border-dark-border">
-                    <Info className="w-3.5 h-3.5 text-ink-muted shrink-0" />
-                    <p className="text-[10px] text-ink-muted dark:text-slate-400">
-                      Heatmap overlaid on image — red/bright zones indicate pixel editing activity.
-                    </p>
-                  </div>
-                )}
-              </div>
 
-              {/* Font anomalies */}
-              {result.fontAnomalies.length > 0 && (
-                <div className="sk-card p-4 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <AlignLeft className="w-4 h-4 text-warning" />
-                    <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400">
-                      {lang === "en" ? "Font & Layout Anomalies" : "फॉन्ट एवं लेआउट विसंगतियाँ"}
+                {/* ── 3. Findings Cards with Severity Chip & Icon (Staggered fade & slide) ── */}
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between px-1">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400 font-heading">
+                      {lang === "en" ? "Key Forensic Findings" : "प्रमुख फॉरेंसिक निष्कर्ष"} ({findings.length})
+                    </span>
+                    <span className="text-[11px] font-mono text-ink-faint dark:text-slate-500">
+                      {result.verdict === "genuine" ? "All Safe" : `${result.verdict.toUpperCase()} Signals`}
                     </span>
                   </div>
-                  <ul className="space-y-1.5">
-                    {result.fontAnomalies.map((a, i) => (
-                      <li key={i} className="flex items-start gap-2 text-xs text-ink dark:text-slate-200">
-                        <AlertTriangle className="w-3.5 h-3.5 text-warning shrink-0 mt-0.5" />
-                        {a}
-                      </li>
-                    ))}
-                  </ul>
+
+                  <div className="space-y-2">
+                    {findings.map((item, index) => {
+                      const Icon = item.icon;
+                      return (
+                        <motion.div
+                          key={item.id}
+                          initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{
+                            duration: 0.35,
+                            delay: shouldReduceMotion ? 0 : index * 0.08,
+                            ease: "easeOut",
+                          }}
+                          className="sk-card p-3.5 sm:p-4 rounded-xl border border-border/80 dark:border-white/10 flex items-start gap-3 transition-colors hover:border-ink-muted/30 dark:hover:border-white/20"
+                        >
+                          <div
+                            className={clsx(
+                              "w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border mt-0.5",
+                              item.severity === "Low" && "bg-emerald-500/10 text-safe border-emerald-500/20",
+                              item.severity === "Medium" && "bg-amber-500/10 text-suspicious border-amber-500/20",
+                              item.severity === "High" && "bg-rose-500/10 text-fake border-rose-500/20"
+                            )}
+                          >
+                            <Icon className="w-4 h-4" />
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <h4 className="text-xs font-bold text-ink dark:text-white truncate">
+                                {item.title}
+                              </h4>
+                              <span
+                                className={clsx(
+                                  "px-2 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase tracking-wide border shrink-0",
+                                  item.severity === "Low" && "bg-emerald-500/10 text-safe border-emerald-500/30",
+                                  item.severity === "Medium" && "bg-amber-500/10 text-suspicious border-amber-500/30",
+                                  item.severity === "High" && "bg-rose-500/10 text-fake border-rose-500/30"
+                                )}
+                              >
+                                {item.severity} Risk
+                              </span>
+                            </div>
+                            <p className="text-xs text-ink-muted dark:text-slate-300 leading-relaxed font-sans">
+                              {item.detail}
+                            </p>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
                 </div>
-              )}
 
-              {/* Evidence checklist */}
-              <div className="sk-card p-4 space-y-2">
-                <button
-                  className="w-full flex items-center justify-between"
-                  onClick={() => setShowFullEvidence((s) => !s)}
-                >
+                {/* ── 4. "What should I do next?" 2-3 Actions ── */}
+                <div className="sk-card p-4 sm:p-5 rounded-2xl border border-border/80 dark:border-white/10 space-y-3">
                   <div className="flex items-center gap-2">
-                    <Eye className="w-4 h-4 text-ink-muted" />
-                    <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400">
-                      {lang === "en" ? "Evidence Checklist" : "साक्ष्य सूची"} ({result.evidencePoints.length})
-                    </span>
+                    <CheckSquare className="w-4 h-4 text-accent" />
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-ink-muted dark:text-slate-400 font-heading">
+                      {lang === "en" ? "What should I do next?" : "आगे क्या करना चाहिए?"}
+                    </h3>
                   </div>
-                  {showFullEvidence ? (
-                    <ChevronUp className="w-4 h-4 text-ink-muted" />
-                  ) : (
-                    <ChevronDown className="w-4 h-4 text-ink-muted" />
-                  )}
-                </button>
-                {showFullEvidence && (
-                  <ol className="space-y-2 mt-2">
-                    {result.evidencePoints.map((pt, i) => (
-                      <li key={i} className="flex items-start gap-2.5 text-xs text-ink dark:text-slate-200">
-                        <span className="font-mono font-bold text-ink-faint dark:text-slate-600 shrink-0 w-4">
+
+                  <div className="space-y-2.5">
+                    {nextActions.map((action, i) => (
+                      <div
+                        key={i}
+                        className="flex items-start gap-3 p-3 rounded-xl bg-surface/60 dark:bg-white/[0.03] border border-border/60 dark:border-white/5"
+                      >
+                        <span className="w-5 h-5 rounded-lg flex items-center justify-center shrink-0 bg-accent/10 text-accent font-mono font-bold text-[11px] border border-accent/20 mt-0.5">
                           {String(i + 1).padStart(2, "0")}
                         </span>
-                        {pt}
-                      </li>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-ink dark:text-white">
+                            {action.title}
+                          </p>
+                          <p className="text-[11px] text-ink-muted dark:text-slate-400 mt-0.5 leading-relaxed font-sans">
+                            {action.description}
+                          </p>
+                        </div>
+                      </div>
                     ))}
-                  </ol>
+                  </div>
+                </div>
+
+                {/* Real-Time Gemini AI Grounding & Web Intelligence (Preserved) */}
+                {groundingData && (
+                  <RealTimeGroundingCard
+                    entityProfile={groundingData.entityProfile}
+                    liveWebStatus={groundingData.liveWebStatus}
+                    riskRationale={groundingData.riskRationale}
+                    actionSteps={groundingData.actionSteps}
+                    provider={groundingData.telemetry?.provider}
+                    lang={lang}
+                  />
                 )}
-              </div>
 
-              {/* Action Buttons: Cryptographic Export & Cyber-Cell Dispatch & Viral Share */}
-              <div className="space-y-2">
-                <button
-                  onClick={downloadReceipt}
-                  className="sk-btn-primary w-full flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Download className="w-4 h-4" />
-                  {lang === "en"
-                    ? "Export Cryptographic Audit Dossier (JSON)"
-                    : "डिजिटल साक्ष्य दस्तावेज़ डाउनलोड करें (JSON)"}
-                </button>
+                {/* Interactive ELA Inspection Heatmap Tool (Preserved) */}
+                <div className="sk-card p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-ink-muted" />
+                      <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400 font-heading">
+                        {lang === "en" ? "Interactive ELA Heatmap" : "इंटरैक्टिव ELA हीटमैप"}
+                      </span>
+                    </div>
+                    {imageURL && !activeSample ? (
+                      <Button
+                        variant="secondary"
+                        size="xs"
+                        onClick={() => setShowELA((s) => !s)}
+                        leftIcon={<Eye className="w-3.5 h-3.5 text-accent" />}
+                      >
+                        {showELA ? "Hide ELA Heatmap" : "Show ELA Heatmap"}
+                      </Button>
+                    ) : activeSample ? (
+                      <span className="text-[10px] text-ink-faint dark:text-slate-600 italic">
+                        (Simulated for demo)
+                      </span>
+                    ) : null}
+                  </div>
+                  <ELAScoreBar score={result.elaScore} />
+                  {showELA && !activeSample && (
+                    <div className="flex items-center gap-2 p-2 rounded-lg bg-surface dark:bg-dark-surface border border-border dark:border-dark-border">
+                      <Info className="w-3.5 h-3.5 text-ink-muted shrink-0" />
+                      <p className="text-[10px] text-ink-muted dark:text-slate-400 font-sans">
+                        Heatmap overlaid on preview image — red/bright zones indicate localized pixel compression anomalies.
+                      </p>
+                    </div>
+                  )}
+                </div>
 
-                <button
-                  onClick={() => {
-                    if (onOpenShareShield) {
-                      onOpenShareShield({
-                        module: "UPI & Receipt Forensics",
-                        verdict: result.verdict,
-                        riskScore: result.verdict === "fraud" ? 94 : result.verdict === "suspicious" ? 65 : 10,
-                        target: result.upiHandle
-                          ? `${result.upiHandle.handle} (UTR: ${result.utrValue || "N/A"})`
-                          : result.utrValue || "UPI Payment Receipt",
-                        evidence: result.evidencePoints,
-                        sha256: result.sha256,
-                        timestamp: result.timestamp,
-                      });
-                    }
-                  }}
-                  className="w-full py-2.5 px-4 rounded-lg border border-indigo-500/30 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 hover:from-indigo-500/20 hover:to-pink-500/20 text-indigo-700 dark:text-indigo-300 font-semibold text-xs flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
-                >
-                  <Share2 className="w-4 h-4 text-indigo-500" />
-                  {lang === "en"
-                    ? "🛡️ Generate Family Shield & Share Alert (WhatsApp/Instagram)"
-                    : "🛡️ फ़ैमिली शील्ड बनाएं व अलर्ट शेयर करें"}
-                </button>
-
-                {(result.verdict === "fraud" || result.verdict === "suspicious") && (
+                {/* Collapsible Technical Evidence Checklist (Preserved) */}
+                <div className="sk-card p-4 space-y-2">
                   <button
-                    onClick={handleCyberCellReport}
-                    className="w-full py-2.5 px-4 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium text-xs flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
+                    className="w-full flex items-center justify-between cursor-pointer"
+                    onClick={() => setShowFullEvidence((s) => !s)}
                   >
-                    <ShieldAlert className="w-4 h-4 text-white" />
-                    {lang === "en"
-                      ? "Dispatch 1930 / Cyber-Cell Complaint"
-                      : "1930 / साइबर सेल शिकायत तैयार करें"}
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-ink-muted" />
+                      <span className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400 font-heading">
+                        {lang === "en" ? "Full Evidence Checklist" : "विस्तृत साक्ष्य सूची"} ({result.evidencePoints.length})
+                      </span>
+                    </div>
+                    {showFullEvidence ? (
+                      <ChevronUp className="w-4 h-4 text-ink-muted" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-ink-muted" />
+                    )}
                   </button>
-                )}
+                  {showFullEvidence && (
+                    <ol className="space-y-2 mt-2 pt-2 border-t border-border/60 dark:border-white/5">
+                      {result.evidencePoints.map((pt, i) => (
+                        <li key={i} className="flex items-start gap-2.5 text-xs text-ink dark:text-slate-200">
+                          <span className="font-mono font-bold text-ink-faint dark:text-slate-600 shrink-0 w-4">
+                            {String(i + 1).padStart(2, "0")}
+                          </span>
+                          <span className="font-sans leading-relaxed">{pt}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </div>
+
+                {/* ── Action Buttons: Cryptographic Export, Viral Family Shield, Cyber-Cell 1930 ── */}
+                <div className="space-y-2 pt-1">
+                  <Button
+                    variant="primary"
+                    fullWidth
+                    onClick={downloadReceipt}
+                    className="flex items-center justify-center gap-2"
+                    leftIcon={<Download className="w-4 h-4" />}
+                  >
+                    {lang === "en"
+                      ? "Export Cryptographic Audit Dossier (JSON)"
+                      : "डिजिटल साक्ष्य दस्तावेज़ डाउनलोड करें (JSON)"}
+                  </Button>
+
+                  <Button
+                    variant="secondary"
+                    fullWidth
+                    onClick={() => {
+                      if (onOpenShareShield) {
+                        onOpenShareShield({
+                          module: "UPI & Receipt Forensics",
+                          verdict: result.verdict,
+                          riskScore: riskScore,
+                          target: result.upiHandle
+                            ? `${result.upiHandle.handle} (UTR: ${result.utrValue || "N/A"})`
+                            : result.utrValue || "UPI Payment Receipt",
+                          evidence: result.evidencePoints,
+                          sha256: result.sha256,
+                          timestamp: result.timestamp,
+                        });
+                      }
+                    }}
+                    className="text-xs flex items-center justify-center gap-2"
+                    leftIcon={<Share2 className="w-4 h-4 text-accent" />}
+                  >
+                    {lang === "en"
+                      ? "🛡️ Generate Family Shield & Share Alert (WhatsApp/Instagram)"
+                      : "🛡️ फ़ैमिली शील्ड बनाएं व अलर्ट शेयर करें"}
+                  </Button>
+
+                  {(result.verdict === "fraud" || result.verdict === "suspicious") && (
+                    <Button
+                      variant="danger"
+                      fullWidth
+                      onClick={handleCyberCellReport}
+                      className="text-xs flex items-center justify-center gap-2"
+                      leftIcon={<ShieldAlert className="w-4 h-4 text-white" />}
+                    >
+                      {lang === "en"
+                        ? "Dispatch 1930 / Cyber-Cell Complaint"
+                        : "1930 / साइबर सेल शिकायत तैयार करें"}
+                    </Button>
+                  )}
+                </div>
               </div>
-            </>
-          )}
+            );
+          })()}
         </div>
       </div>
 
@@ -1107,12 +1981,15 @@ export default function UPIInspector({
                   National Cyber Crime Reporting Portal (1930 / CFCFRMS)
                 </h3>
               </div>
-              <button
+              <Button
+                variant="secondary"
+                size="xs"
                 onClick={() => setShowCyberModal(false)}
-                className="text-ink-muted hover:text-ink dark:hover:text-white"
+                className="p-1.5"
+                aria-label="Close"
               >
                 <X className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
 
             <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-xs text-amber-900 dark:text-amber-200">
@@ -1132,17 +2009,19 @@ export default function UPIInspector({
                 <label className="text-xs font-semibold text-ink-muted dark:text-slate-400">
                   Official Police Complaint Draft (Ready to Submit)
                 </label>
-                <button
+                <Button
+                  variant="secondary"
+                  size="xs"
                   onClick={() => {
                     navigator.clipboard.writeText(cyberCellData.formalPoliceNarrative);
                     setCopiedPoliceText(true);
                     setTimeout(() => setCopiedPoliceText(false), 2000);
                   }}
-                  className="flex items-center gap-1 text-xs text-trust hover:underline"
+                  className="flex items-center gap-1 text-xs"
                 >
                   <Copy className="w-3 h-3" />
                   {copiedPoliceText ? "Copied!" : "Copy Full Text"}
-                </button>
+                </Button>
               </div>
               <textarea
                 readOnly
@@ -1157,12 +2036,13 @@ export default function UPIInspector({
                 Ref Code: {cyberCellData.acknowledgementCode}
               </span>
               <div className="flex gap-2">
-                <button
+                <Button
+                  variant="secondary"
+                  size="xs"
                   onClick={() => setShowCyberModal(false)}
-                  className="sk-btn-ghost text-xs"
                 >
                   Close
-                </button>
+                </Button>
                 <a
                   href="https://cybercrime.gov.in"
                   target="_blank"

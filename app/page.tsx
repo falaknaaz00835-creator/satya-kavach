@@ -31,6 +31,7 @@ import ShareShieldModal, { ShareShieldData } from "@/components/ShareShieldModal
 import CommandPalette from "@/components/CommandPalette";
 import AppSidebar from "@/components/AppSidebar";
 import MobileTabBar from "@/components/MobileTabBar";
+import Button from "@/components/Button";
 
 /* ─────────────────────────────────────────
    Navigation module definitions
@@ -175,19 +176,21 @@ export default function WorkbenchShell() {
           </div>
 
           {/* Apple Spotlight Search Trigger (⌘K) */}
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => setPaletteOpen(true)}
-            className="flex items-center gap-2 text-xs text-ink-muted dark:text-slate-400 bg-surface dark:bg-white/[0.05] hover:bg-slate-200/70 dark:hover:bg-white/[0.1] border border-border dark:border-white/10 rounded-xl px-3 py-1.5 transition-all shadow-xs shrink-0 cursor-pointer ml-auto"
+            className="ml-auto shrink-0"
             title="Open Command Palette (Ctrl+K or ⌘K)"
           >
-            <Search className="w-3.5 h-3.5 text-indigo-500" />
+            <Search className="w-3.5 h-3.5 text-accent" />
             <span className="hidden md:inline font-medium">
               {lang === "en" ? "Search or Jump..." : "खोजें या चुनें..."}
             </span>
-            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono text-slate-500 dark:text-slate-400 bg-card dark:bg-white/10 border border-border dark:border-white/10 rounded-md">
+            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono text-slate-400 bg-card dark:bg-white/10 border border-border dark:border-white/10 rounded-md">
               ⌘K
             </kbd>
-          </button>
+          </Button>
 
           {/* Live indicator */}
           <div className="flex items-center gap-1.5 shrink-0">
@@ -209,18 +212,22 @@ export default function WorkbenchShell() {
           </div>
 
           {/* AR Camera Scan Trigger */}
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => setArOpen(true)}
-            className="flex items-center gap-1.5 text-xs font-semibold bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 rounded-xl px-2.5 py-1.5 transition-all shadow-xs shrink-0 cursor-pointer active:scale-95"
+            className="shrink-0 text-emerald-400 hover:text-emerald-300 border-emerald-500/30"
             title="Launch Live AR Camera Viewfinder Mode"
           >
-            <Camera className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 animate-pulse" />
-            <span className="hidden sm:inline">📱 AR Camera</span>
+            <Camera className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+            <span className="hidden sm:inline">AR Camera</span>
             <span className="sm:hidden">AR</span>
-          </button>
+          </Button>
 
           {/* Family Shield Share Trigger */}
-          <button
+          <Button
+            variant="primary"
+            size="sm"
             onClick={() => {
               if (!shareData) {
                 setShareData({
@@ -239,32 +246,36 @@ export default function WorkbenchShell() {
               }
               setShareOpen(true);
             }}
-            className="flex items-center gap-1.5 text-xs font-semibold bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-700 dark:text-indigo-400 border border-indigo-500/30 rounded-xl px-2.5 py-1.5 transition-all shadow-xs shrink-0 cursor-pointer active:scale-95"
+            className="shrink-0"
             title="Open Multi-Platform Family Shield & Viral Share Drawer"
           >
-            <Share2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            <span className="hidden sm:inline">🛡️ Family Shield</span>
+            <Share2 className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Family Shield</span>
             <span className="sm:hidden">Shield</span>
-          </button>
+          </Button>
 
           {/* Language toggle */}
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => setLang((l) => (l === "en" ? "hi" : "en"))}
-            className="flex items-center gap-1.5 text-xs font-medium text-ink-muted dark:text-slate-400 hover:text-ink dark:hover:text-white border border-border dark:border-dark-border rounded-xl px-2.5 py-1.5 transition-colors shrink-0 cursor-pointer active:scale-95"
+            className="shrink-0"
             aria-label="Toggle language"
           >
             <Globe2 className="w-3.5 h-3.5" />
             {lang === "en" ? "हिंदी" : "English"}
-          </button>
+          </Button>
 
           {/* Dark mode toggle */}
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => setDark((d) => !d)}
-            className="text-ink-muted dark:text-slate-400 hover:text-ink dark:hover:text-white border border-border dark:border-dark-border rounded-xl p-1.5 transition-colors shrink-0 cursor-pointer active:scale-95"
+            className="shrink-0 px-2.5"
             aria-label="Toggle dark mode"
           >
-            {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
+            {dark ? <Sun className="w-4 h-4 text-accent" /> : <Moon className="w-4 h-4" />}
+          </Button>
         </header>
 
         {/* Module content area */}
@@ -457,12 +468,15 @@ function AuditLogDrawer({
               {lang === "en" ? "Saved Audit Log" : "सहेजे गए ऑडिट"}
             </span>
           </div>
-          <button
+          <Button
+            variant="secondary"
+            size="xs"
             onClick={onClose}
-            className="text-ink-muted hover:text-ink dark:text-slate-400 dark:hover:text-white"
+            className="p-1.5 text-ink-muted hover:text-ink dark:text-slate-400 dark:hover:text-white"
+            aria-label="Close Audit Log"
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
         <div className="flex-1 flex flex-col items-center justify-center gap-3 p-8 text-center">
           <Clock className="w-10 h-10 text-ink-faint dark:text-slate-600" />

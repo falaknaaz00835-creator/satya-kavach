@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import RealTimeGroundingCard from "@/components/RealTimeGroundingCard";
 import AppleCircularDial from "@/components/AppleCircularDial";
+import Button from "@/components/Button";
 
 /* ─────────────────────────────────────────
    Types
@@ -751,10 +752,10 @@ export default function JobScreener({
           </p>
         </div>
         {mode === "done" && (
-          <button onClick={reset} className="sk-btn-ghost text-xs gap-1.5">
+          <Button variant="secondary" size="xs" onClick={reset} className="gap-1.5">
             <RefreshCcw className="w-3.5 h-3.5" />
             {lang === "en" ? "New Scan" : "नई जांच"}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -822,14 +823,16 @@ export default function JobScreener({
               rows={10}
               className="w-full px-3 py-2.5 text-sm border border-border dark:border-dark-border rounded-lg bg-surface dark:bg-dark-surface text-ink dark:text-white placeholder:text-ink-faint dark:placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-ink/20 dark:focus:ring-white/10 resize-none font-mono leading-relaxed"
             />
-            <button
+            <Button
+              variant="primary"
+              fullWidth
               onClick={() => runScreen(inputText)}
               disabled={!inputText.trim() || mode === "loading"}
-              className="sk-btn-primary w-full"
+              isLoading={mode === "loading"}
             >
               <Search className="w-4 h-4" />
               {lang === "en" ? "Screen This Offer Letter" : "इस ऑफर लेटर की जांच करें"}
-            </button>
+            </Button>
           </div>
 
           {/* File upload */}
@@ -1028,7 +1031,7 @@ export default function JobScreener({
                           </div>
                           {flag.matchedText && (
                             <p className="sk-mono text-[10px] text-ink-muted dark:text-slate-400 mt-0.5 bg-surface dark:bg-dark-surface rounded px-2 py-0.5 inline-block max-w-full truncate border border-border dark:border-dark-border">
-                              "{flag.matchedText}"
+                              &quot;{flag.matchedText}&quot;
                             </p>
                           )}
                           <p className="text-[11px] text-ink-muted dark:text-slate-400 mt-1 leading-relaxed">
@@ -1074,12 +1077,18 @@ export default function JobScreener({
 
               {/* Download & Share Actions */}
               <div className="space-y-2 pt-1">
-                <button onClick={downloadReport} className="sk-btn-primary w-full cursor-pointer">
+                <Button
+                  variant="primary"
+                  fullWidth
+                  onClick={downloadReport}
+                >
                   <Download className="w-4 h-4" />
                   {lang === "en" ? "Export Screening Dossier (.txt)" : "स्क्रीनिंग रिपोर्ट डाउनलोड करें"}
-                </button>
+                </Button>
 
-                <button
+                <Button
+                  variant="secondary"
+                  fullWidth
                   onClick={() => {
                     const event = new CustomEvent("open-family-shield", {
                       detail: {
@@ -1093,13 +1102,13 @@ export default function JobScreener({
                     });
                     window.dispatchEvent(event);
                   }}
-                  className="w-full py-2.5 px-4 rounded-xl border border-indigo-500/30 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 hover:from-indigo-500/20 hover:to-pink-500/20 text-indigo-700 dark:text-indigo-300 font-semibold text-xs flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer active:scale-95"
+                  className="text-xs flex items-center justify-center gap-2"
                 >
-                  <Share2 className="w-4 h-4 text-indigo-500" />
+                  <Share2 className="w-4 h-4 text-accent" />
                   {lang === "en"
                     ? "🛡️ Generate Family Shield & Viral Share Card"
                     : "🛡️ फ़ैमिली शील्ड बनाएं व अलर्ट शेयर करें"}
-                </button>
+                </Button>
               </div>
             </>
           )}
