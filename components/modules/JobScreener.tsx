@@ -22,8 +22,10 @@ import {
   ShieldAlert,
   ShieldCheck,
   Info,
+  Share2,
 } from "lucide-react";
 import RealTimeGroundingCard from "@/components/RealTimeGroundingCard";
+import AppleCircularDial from "@/components/AppleCircularDial";
 
 /* ─────────────────────────────────────────
    Types
@@ -901,40 +903,57 @@ export default function JobScreener({
 
           {mode === "done" && result && (
             <>
-              {/* Verdict card with risk score ring */}
-              <div className={clsx(
-                "sk-card p-5 border-l-4",
-                result.riskLevel === "safe"       && "border-l-trust",
-                result.riskLevel === "suspicious"  && "border-l-warning",
-                result.riskLevel === "fraud"       && "border-l-fraud",
-              )}>
-                <div className="flex items-center gap-4">
-                  <RiskScoreRing score={result.riskScore} level={result.riskLevel} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400 mb-1.5">
-                      {lang === "en" ? "Screening Verdict" : "स्क्रीनिंग निर्णय"}
+              {/* Massive Hero Verdict Banner with Apple Circular Dial */}
+              <div
+                className={clsx(
+                  "sk-hero-verdict",
+                  result.riskLevel === "safe" && "sk-hero-verdict-genuine",
+                  result.riskLevel === "suspicious" && "sk-hero-verdict-warn",
+                  result.riskLevel === "fraud" && "sk-hero-verdict-fraud"
+                )}
+              >
+                <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6">
+                  <div className="flex-1 min-w-0 text-center sm:text-left">
+                    <p className="text-xs font-bold uppercase tracking-wider text-ink-muted dark:text-slate-400 mb-1.5">
+                      {lang === "en" ? "Offer Screening Verdict & Risk Gauge" : "ऑफर जांच निर्णय व जोखिम मीटर"}
                     </p>
-                    <RiskBadge level={result.riskLevel} />
-                    <p className="text-xs text-ink-muted dark:text-slate-400 mt-1.5 font-mono">
-                      {result.confidence}% confidence · {result.redFlags.length} flag{result.redFlags.length !== 1 ? "s" : ""} · {result.greenSignals.length} signal{result.greenSignals.length !== 1 ? "s" : ""}
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-[10px] text-ink-faint dark:text-slate-600">Screened at</p>
-                    <p className="text-[11px] font-mono text-ink-muted dark:text-slate-400">{result.timestamp}</p>
-                  </div>
-                </div>
+                    <div className="flex items-center gap-3 flex-wrap justify-center sm:justify-start">
+                      <RiskBadge level={result.riskLevel} />
+                      <span className="text-sm font-mono text-ink-muted dark:text-slate-400">
+                        {result.confidence}% confidence
+                      </span>
+                      <span className="text-xs font-mono px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-300">
+                        {result.redFlags.length} flags · {result.greenSignals.length} verified
+                      </span>
+                    </div>
 
-                {/* Verdict message */}
-                <div className={clsx(
-                  "mt-3 p-3 rounded-lg text-xs leading-relaxed",
-                  result.riskLevel === "fraud"      && "bg-fraud-bg text-fraud font-medium",
-                  result.riskLevel === "suspicious"  && "bg-warning-bg text-warning font-medium",
-                  result.riskLevel === "safe"        && "bg-trust-bg text-trust",
-                )}>
-                  {result.riskLevel === "fraud" && "DO NOT pay any amount. Do NOT share personal documents. Report this offer to cybercrime.gov.in or call 1930."}
-                  {result.riskLevel === "suspicious" && "Verify independently — call the company's official number (not from this letter) before responding."}
-                  {result.riskLevel === "safe" && "No major red flags detected. Verify CIN at mca.gov.in and GSTIN at gst.gov.in as a final step."}
+                    {/* Verdict message */}
+                    <div className={clsx(
+                      "mt-4 p-3.5 rounded-2xl text-xs leading-relaxed border shadow-xs",
+                      result.riskLevel === "fraud" && "bg-rose-500/10 border-rose-500/20 text-rose-700 dark:text-rose-300 font-medium",
+                      result.riskLevel === "suspicious" && "bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-300 font-medium",
+                      result.riskLevel === "safe" && "bg-emerald-500/10 border-emerald-500/20 text-emerald-700 dark:text-emerald-300",
+                    )}>
+                      {result.riskLevel === "fraud" && "🚨 DO NOT pay any registration or training fee. This offer demonstrates strong indicators of employment fraud. Report to 1930 / cybercrime.gov.in."}
+                      {result.riskLevel === "suspicious" && "⚠️ Verify independently — call the company's verified corporate board line (not the phone from this document) before taking action."}
+                      {result.riskLevel === "safe" && "🛡️ Clean profile detected. Cross-reference company CIN on mca.gov.in as an additional security measure."}
+                    </div>
+
+                    <div className="mt-3 text-[11px] font-mono text-ink-muted dark:text-slate-500">
+                      Screened at: {result.timestamp}
+                    </div>
+                  </div>
+
+                  <div className="shrink-0 flex items-center justify-center p-3 rounded-3xl bg-white/70 dark:bg-white/[0.04] backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-lg">
+                    <AppleCircularDial
+                      score={result.riskScore}
+                      verdict={result.riskLevel === "safe" ? "genuine" : result.riskLevel}
+                      size={124}
+                      strokeWidth={11}
+                      lang={lang}
+                      showVerdictBadge={false}
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -1053,11 +1072,35 @@ export default function JobScreener({
                 </div>
               )}
 
-              {/* Download */}
-              <button onClick={downloadReport} className="sk-btn-primary w-full">
-                <Download className="w-4 h-4" />
-                {lang === "en" ? "Download Screening Report (.txt)" : "स्क्रीनिंग रिपोर्ट डाउनलोड करें"}
-              </button>
+              {/* Download & Share Actions */}
+              <div className="space-y-2 pt-1">
+                <button onClick={downloadReport} className="sk-btn-primary w-full cursor-pointer">
+                  <Download className="w-4 h-4" />
+                  {lang === "en" ? "Export Screening Dossier (.txt)" : "स्क्रीनिंग रिपोर्ट डाउनलोड करें"}
+                </button>
+
+                <button
+                  onClick={() => {
+                    const event = new CustomEvent("open-family-shield", {
+                      detail: {
+                        module: "Job Offer Screener",
+                        verdict: result.riskLevel === "safe" ? "genuine" : result.riskLevel,
+                        riskScore: result.riskScore,
+                        target: result.extractedEntities.companyName || "Employment Offer Letter",
+                        evidence: result.redFlags.map((f) => `${f.label}: ${f.detail}`),
+                        timestamp: result.timestamp,
+                      },
+                    });
+                    window.dispatchEvent(event);
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl border border-indigo-500/30 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 hover:from-indigo-500/20 hover:to-pink-500/20 text-indigo-700 dark:text-indigo-300 font-semibold text-xs flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer active:scale-95"
+                >
+                  <Share2 className="w-4 h-4 text-indigo-500" />
+                  {lang === "en"
+                    ? "🛡️ Generate Family Shield & Viral Share Card"
+                    : "🛡️ फ़ैमिली शील्ड बनाएं व अलर्ट शेयर करें"}
+                </button>
+              </div>
             </>
           )}
         </div>

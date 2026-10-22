@@ -22,8 +22,10 @@ import {
   Copy,
   ExternalLink,
   X,
+  Share2,
 } from "lucide-react";
 import RealTimeGroundingCard from "@/components/RealTimeGroundingCard";
+import AppleCircularDial from "@/components/AppleCircularDial";
 import { computeSHA256, validateUTR as validateUTRAlgorithmic } from "@/lib/real-forensics";
 
 /* ─────────────────────────────────────────
@@ -370,9 +372,11 @@ function ELAScoreBar({ score }: { score: number }) {
 export default function UPIInspector({
   lang,
   onAuditComplete,
+  onOpenShareShield,
 }: {
   lang: "en" | "hi";
   onAuditComplete: () => void;
+  onOpenShareShield?: (data: any) => void;
 }) {
   const [mode, setMode] = useState<"idle" | "loading" | "done">("idle");
   const [imageURL, setImageURL] = useState<string | null>(null);
@@ -835,19 +839,19 @@ export default function UPIInspector({
 
           {mode === "done" && result && (
             <>
-              {/* Verdict card */}
+              {/* Massive Hero Verdict Banner with Apple Activity Gauge */}
               <div
                 className={clsx(
-                  "sk-card p-5 border-l-4",
-                  result.verdict === "genuine" && "border-l-trust",
-                  result.verdict === "suspicious" && "border-l-warning",
-                  result.verdict === "fraud" && "border-l-fraud"
+                  "sk-hero-verdict",
+                  result.verdict === "genuine" && "sk-hero-verdict-genuine",
+                  result.verdict === "suspicious" && "sk-hero-verdict-warn",
+                  result.verdict === "fraud" && "sk-hero-verdict-fraud"
                 )}
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400 mb-1">
-                      {lang === "en" ? "Forensic Verdict" : "फॉरेंसिक निर्णय"}
+                <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6">
+                  <div className="flex flex-col items-center sm:items-start text-center sm:text-left flex-1 min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400 mb-1.5">
+                      {lang === "en" ? "Forensic Verdict & Risk Gauge" : "फॉरेंसिक निर्णय व जोखिम मीटर"}
                     </p>
                     <div className="flex items-center gap-3">
                       <VerdictBadge verdict={result.verdict} />
@@ -855,15 +859,39 @@ export default function UPIInspector({
                         {result.confidence}% confidence
                       </span>
                     </div>
+
+                    <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-300 w-full sm:max-w-xs">
+                      <div className="bg-slate-50 dark:bg-white/[0.04] p-2 rounded-lg border border-slate-200/60 dark:border-white/5">
+                        <span className="text-[10px] text-slate-400 uppercase font-semibold block">Tampering ELA</span>
+                        <strong className="font-mono text-sm text-ink dark:text-white">{result.elaScore}/100</strong>
+                      </div>
+                      <div className="bg-slate-50 dark:bg-white/[0.04] p-2 rounded-lg border border-slate-200/60 dark:border-white/5">
+                        <span className="text-[10px] text-slate-400 uppercase font-semibold block">UTR Format</span>
+                        <strong className={clsx("font-mono text-sm", result.utrValid ? "text-emerald-600 dark:text-emerald-400" : "text-red-500")}>
+                          {result.utrValid ? "NPCI Valid" : "Invalid"}
+                        </strong>
+                      </div>
+                    </div>
+
+                    <div className="mt-3">
+                      <p className="text-[10px] text-ink-faint dark:text-slate-500">Scanned at: {result.timestamp}</p>
+                      {result.sha256 && (
+                        <p className="text-[9px] font-mono text-indigo-500 dark:text-indigo-400 truncate max-w-[240px]">
+                          SHA-256: {result.sha256}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-[10px] text-ink-faint dark:text-slate-600">Scanned at</p>
-                    <p className="text-xs font-mono text-ink-muted dark:text-slate-400">{result.timestamp}</p>
-                    {result.sha256 && (
-                      <p className="text-[9px] font-mono text-emerald-600 dark:text-emerald-400 mt-1 max-w-[180px] truncate">
-                        SHA: {result.sha256}
-                      </p>
-                    )}
+
+                  <div className="shrink-0 flex items-center justify-center p-3 rounded-2xl bg-slate-50/70 dark:bg-white/[0.03] border border-slate-200/60 dark:border-white/5">
+                    <AppleCircularDial
+                      score={result.verdict === "fraud" ? Math.max(88, result.elaScore) : result.verdict === "suspicious" ? 64 : 12}
+                      verdict={result.verdict}
+                      size={116}
+                      strokeWidth={10}
+                      lang={lang}
+                      showVerdictBadge={false}
+                    />
                   </div>
                 </div>
               </div>
@@ -1015,11 +1043,11 @@ export default function UPIInspector({
                 )}
               </div>
 
-              {/* Action Buttons: Cryptographic Export & Cyber-Cell Dispatch */}
+              {/* Action Buttons: Cryptographic Export & Cyber-Cell Dispatch & Viral Share */}
               <div className="space-y-2">
                 <button
                   onClick={downloadReceipt}
-                  className="sk-btn-primary w-full flex items-center justify-center gap-2"
+                  className="sk-btn-primary w-full flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Download className="w-4 h-4" />
                   {lang === "en"
@@ -1027,10 +1055,34 @@ export default function UPIInspector({
                     : "डिजिटल साक्ष्य दस्तावेज़ डाउनलोड करें (JSON)"}
                 </button>
 
+                <button
+                  onClick={() => {
+                    if (onOpenShareShield) {
+                      onOpenShareShield({
+                        module: "UPI & Receipt Forensics",
+                        verdict: result.verdict,
+                        riskScore: result.verdict === "fraud" ? 94 : result.verdict === "suspicious" ? 65 : 10,
+                        target: result.upiHandle
+                          ? `${result.upiHandle.handle} (UTR: ${result.utrValue || "N/A"})`
+                          : result.utrValue || "UPI Payment Receipt",
+                        evidence: result.evidencePoints,
+                        sha256: result.sha256,
+                        timestamp: result.timestamp,
+                      });
+                    }
+                  }}
+                  className="w-full py-2.5 px-4 rounded-lg border border-indigo-500/30 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 hover:from-indigo-500/20 hover:to-pink-500/20 text-indigo-700 dark:text-indigo-300 font-semibold text-xs flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
+                >
+                  <Share2 className="w-4 h-4 text-indigo-500" />
+                  {lang === "en"
+                    ? "🛡️ Generate Family Shield & Share Alert (WhatsApp/Instagram)"
+                    : "🛡️ फ़ैमिली शील्ड बनाएं व अलर्ट शेयर करें"}
+                </button>
+
                 {(result.verdict === "fraud" || result.verdict === "suspicious") && (
                   <button
                     onClick={handleCyberCellReport}
-                    className="w-full py-2.5 px-4 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium text-xs flex items-center justify-center gap-2 transition-colors shadow-sm"
+                    className="w-full py-2.5 px-4 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium text-xs flex items-center justify-center gap-2 transition-colors shadow-sm cursor-pointer"
                   >
                     <ShieldAlert className="w-4 h-4 text-white" />
                     {lang === "en"

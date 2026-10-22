@@ -55,9 +55,9 @@ export default function RealTimeGroundingCard({
       : "text-red-600 dark:text-red-400 bg-red-500";
 
   return (
-    <div className="sk-card p-5 border border-indigo-500/25 bg-gradient-to-br from-indigo-50/40 via-surface to-purple-50/30 dark:from-indigo-950/20 dark:via-dark-card dark:to-purple-950/20 space-y-4 shadow-sm">
+    <div className="sk-glass-card-elevated p-6 border border-indigo-500/25 bg-gradient-to-br from-indigo-50/50 via-white/80 to-purple-50/40 dark:from-indigo-950/30 dark:via-[#111726]/90 dark:to-purple-950/20 space-y-5 shadow-lg">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border dark:border-dark-border pb-3">
+      <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-white/10 pb-3.5">
         <div className="flex items-center gap-2.5">
           <div className="p-1.5 rounded-lg bg-indigo-600 text-white shadow-xs">
             <Sparkles className="w-4 h-4" />

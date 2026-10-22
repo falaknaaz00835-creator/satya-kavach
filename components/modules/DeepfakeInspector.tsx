@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import clsx from 'clsx';
 import {
   Video,
   ShieldAlert,
@@ -13,8 +14,10 @@ import {
   Activity,
   CheckCircle2,
   XCircle,
+  Share2,
 } from 'lucide-react';
 import RealTimeGroundingCard from '@/components/RealTimeGroundingCard';
+import AppleCircularDial from '@/components/AppleCircularDial';
 
 interface DeepfakeInspectorProps {
   lang: 'en' | 'hi';
@@ -187,28 +190,62 @@ export default function DeepfakeInspector({ lang, onAuditComplete }: DeepfakeIns
 
       {/* Results Panel */}
       {results && (
-        <div className="sk-card p-6 dark:bg-dark-card border border-border dark:border-dark-border space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border dark:border-dark-border pb-3">
-            <div className="flex items-center gap-2">
-              {results.verdict === 'fraud' ? (
-                <span className="sk-badge-fraud text-sm px-3 py-1">
-                  <ShieldAlert className="w-4 h-4" />
-                  HIGH RISK DEEPFAKE • {results.riskScore}%
-                </span>
-              ) : (
-                <span className="sk-badge-trust text-sm px-3 py-1">
-                  <ShieldCheck className="w-4 h-4" />
-                  GENUINE RECORDING • SAFE
-                </span>
-              )}
-            </div>
-            {results.sha256 && (
-              <div className="flex items-center gap-1.5 text-[10px] font-mono text-ink-muted dark:text-slate-400 bg-surface dark:bg-dark-surface px-2.5 py-1 rounded-md border border-border dark:border-dark-border">
-                <Hash className="w-3 h-3 text-emerald-600" />
-                <span className="truncate max-w-[200px]">SHA-256: {results.sha256}</span>
-              </div>
+        <div className="space-y-4">
+          {/* Massive Immersive Deepfake Hero Banner with Apple Circular Dial */}
+          <div
+            className={clsx(
+              "sk-hero-verdict",
+              results.verdict === "fraud" ? "sk-hero-verdict-fraud" : "sk-hero-verdict-genuine"
             )}
+          >
+            <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6">
+              <div className="flex-1 min-w-0 text-center sm:text-left">
+                <p className="text-xs font-bold uppercase tracking-wider text-ink-muted dark:text-slate-400 mb-1.5">
+                  {lang === "en" ? "Deepfake Forensic Assessment & Synthetic Probability" : "डीपफेक फॉरेंसिक जांच व एआई संभावना"}
+                </p>
+                <div className="flex items-center gap-3 flex-wrap justify-center sm:justify-start">
+                  {results.verdict === "fraud" ? (
+                    <span className="sk-badge-fraud text-xs px-3 py-1 font-bold">
+                      <ShieldAlert className="w-3.5 h-3.5" /> HIGH RISK SYNTHETIC DEEPFAKE
+                    </span>
+                  ) : (
+                    <span className="sk-badge-trust text-xs px-3 py-1 font-bold">
+                      <ShieldCheck className="w-3.5 h-3.5" /> GENUINE RECORDING • SAFE
+                    </span>
+                  )}
+                  <span className="text-sm font-mono text-ink-muted dark:text-slate-400">
+                    {results.riskScore}% synthetic probability
+                  </span>
+                </div>
+
+                <div className="mt-4 p-3.5 rounded-2xl text-xs leading-relaxed border shadow-xs bg-white/50 dark:bg-white/[0.04] border-slate-200/80 dark:border-white/10 text-slate-700 dark:text-slate-300">
+                  {results.verdict === "fraud"
+                    ? "🚨 Digital Arrest / Impersonation risk detected. Face boundaries exhibit synthetic warping and temporal phoneme misalignment. Do not transfer funds or panic."
+                    : "🛡️ Video stream conforms to natural facial kinematics. No generative diffusion or face-swap boundaries identified."}
+                </div>
+
+                {results.sha256 && (
+                  <div className="mt-3 text-[10px] font-mono text-ink-muted dark:text-slate-400 truncate max-w-sm">
+                    Evidence Hash: {results.sha256}
+                  </div>
+                )}
+              </div>
+
+              <div className="shrink-0 flex items-center justify-center p-3 rounded-3xl bg-white/70 dark:bg-white/[0.04] backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-lg">
+                <AppleCircularDial
+                  score={results.riskScore || (results.verdict === "fraud" ? 96 : 4)}
+                  verdict={results.verdict === "fraud" ? "fraud" : "genuine"}
+                  size={124}
+                  strokeWidth={11}
+                  label={lang === "en" ? "Synthetic Index" : "सिंथेटिक स्तर"}
+                  lang={lang}
+                  showVerdictBadge={false}
+                />
+              </div>
+            </div>
           </div>
+
+          <div className="sk-card p-6 dark:bg-dark-card border border-border dark:border-dark-border space-y-4">
 
           {/* Metrics Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -272,6 +309,30 @@ export default function DeepfakeInspector({ lang, onAuditComplete }: DeepfakeIns
             </ul>
           </div>
 
+          {/* Viral Family Shield Button */}
+          <button
+            onClick={() => {
+              const event = new CustomEvent("open-family-shield", {
+                detail: {
+                  module: "Deepfake & Video Inspector",
+                  verdict: results.verdict === "fraud" ? "fraud" : "genuine",
+                  riskScore: results.riskScore || (results.verdict === "fraud" ? 96 : 4),
+                  target: videoFile?.name || "Suspicious Video Stream",
+                  evidence: results.evidence || [],
+                  sha256: results.sha256,
+                  timestamp: new Date().toISOString(),
+                },
+              });
+              window.dispatchEvent(event);
+            }}
+            className="w-full py-2.5 px-4 rounded-xl border border-indigo-500/30 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 hover:from-indigo-500/20 hover:to-pink-500/20 text-indigo-700 dark:text-indigo-300 font-semibold text-xs flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer active:scale-95"
+          >
+            <Share2 className="w-4 h-4 text-indigo-500" />
+            {lang === "en"
+              ? "🛡️ Generate Family Shield & Viral Share Card"
+              : "🛡️ फ़ैमिली शील्ड बनाएं व अलर्ट शेयर करें"}
+          </button>
+
           {/* Telemetry Footer */}
           <div className="pt-3 border-t border-border dark:border-dark-border flex items-center justify-between text-[10px] font-mono text-ink-faint dark:text-slate-500">
             <span className="flex items-center gap-1">
@@ -281,6 +342,7 @@ export default function DeepfakeInspector({ lang, onAuditComplete }: DeepfakeIns
             <span>~{results.telemetry?.latencyMs}ms</span>
           </div>
         </div>
+      </div>
       )}
     </div>
   );

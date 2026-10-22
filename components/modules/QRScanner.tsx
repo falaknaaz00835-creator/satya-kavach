@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import clsx from "clsx";
 import {
   QrCode,
@@ -25,8 +25,10 @@ import {
   Shield,
   Mail,
   X,
+  Share2,
 } from "lucide-react";
 import RealTimeGroundingCard from "@/components/RealTimeGroundingCard";
+import AppleCircularDial from "@/components/AppleCircularDial";
 import { parseUPIIntent, computeSHA256 } from "@/lib/real-forensics";
 
 /* ─────────────────────────────────────────
@@ -516,9 +518,13 @@ function SeverityDot({ severity }: { severity: ThreatFlag["severity"] }) {
 export default function QRScanner({
   lang,
   onAuditComplete,
+  initialInput,
+  onOpenShareShield,
 }: {
   lang: "en" | "hi";
   onAuditComplete: () => void;
+  initialInput?: string;
+  onOpenShareShield?: (data: any) => void;
 }) {
   const [mode, setMode] = useState<"idle" | "loading" | "done">("idle");
   const [pastedInput, setPastedInput] = useState("");
@@ -635,6 +641,15 @@ export default function QRScanner({
     setActiveSample(null);
     runScan(classifyContent(raw));
   }, [pastedInput, runScan]);
+
+  /* ── Handle external / AR camera payload trigger ── */
+  useEffect(() => {
+    if (initialInput && initialInput.trim()) {
+      setPastedInput(initialInput.trim());
+      setActiveSample(null);
+      runScan(classifyContent(initialInput.trim()));
+    }
+  }, [initialInput, runScan]);
 
   /* ── Handle QR image upload ── */
   const handleFile = useCallback(async (file: File) => {
@@ -930,36 +945,59 @@ export default function QRScanner({
 
           {mode === "done" && result && (
             <>
-              {/* Verdict card */}
-              <div className={clsx(
-                "sk-card p-5 border-l-4",
-                result.threatLevel === "safe"      && "border-l-trust",
-                result.threatLevel === "suspicious" && "border-l-warning",
-                result.threatLevel === "dangerous"  && "border-l-fraud",
-              )}>
-                <div className="flex items-start justify-between gap-4">
-                  <div>
+              {/* Massive Hero Verdict Banner with Apple Activity Gauge */}
+              <div
+                className={clsx(
+                  "sk-hero-verdict",
+                  result.threatLevel === "safe" && "sk-hero-verdict-genuine",
+                  result.threatLevel === "suspicious" && "sk-hero-verdict-warn",
+                  result.threatLevel === "dangerous" && "sk-hero-verdict-fraud"
+                )}
+              >
+                <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6">
+                  <div className="flex flex-col items-center sm:items-start text-center sm:text-left flex-1 min-w-0">
                     <p className="text-xs font-semibold uppercase tracking-wider text-ink-muted dark:text-slate-400 mb-1.5">
-                      {lang === "en" ? "Threat Assessment" : "खतरे का आकलन"}
+                      {lang === "en" ? "Threat Assessment & Risk Gauge" : "खतरे का आकलन व जोखिम मीटर"}
                     </p>
-                    <div className="flex items-center gap-3 flex-wrap">
+                    <div className="flex items-center gap-3 flex-wrap justify-center sm:justify-start">
                       <ThreatBadge level={result.threatLevel} />
                       <span className="text-sm font-mono text-ink-muted dark:text-slate-400">
                         {result.confidence}% confidence
                       </span>
-                      <span className={clsx(
-                        "text-xs font-semibold px-2 py-0.5 rounded border font-mono",
-                        result.decoded.type === "upi"
-                          ? "border-ink-faint text-ink-muted dark:border-slate-600 dark:text-slate-400"
-                          : "border-ink-faint text-ink-muted dark:border-slate-600 dark:text-slate-400"
-                      )}>
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded border border-slate-200 dark:border-white/10 font-mono text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-white/[0.04]">
                         {result.decoded.type.toUpperCase()}
                       </span>
                     </div>
+
+                    <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-300 w-full sm:max-w-xs">
+                      <div className="bg-slate-50 dark:bg-white/[0.04] p-2 rounded-lg border border-slate-200/60 dark:border-white/5">
+                        <span className="text-[10px] text-slate-400 uppercase font-semibold block">Risk Level</span>
+                        <strong className={clsx("font-mono text-sm", result.threatLevel === "dangerous" ? "text-red-500" : result.threatLevel === "suspicious" ? "text-amber-500" : "text-emerald-500")}>
+                          {result.threatLevel.toUpperCase()}
+                        </strong>
+                      </div>
+                      <div className="bg-slate-50 dark:bg-white/[0.04] p-2 rounded-lg border border-slate-200/60 dark:border-white/5">
+                        <span className="text-[10px] text-slate-400 uppercase font-semibold block">Flags Detected</span>
+                        <strong className="font-mono text-sm text-ink dark:text-white">
+                          {result.flags.length} active
+                        </strong>
+                      </div>
+                    </div>
+
+                    <div className="mt-3">
+                      <p className="text-[10px] text-ink-faint dark:text-slate-500">Scanned at: {result.timestamp}</p>
+                    </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-[10px] text-ink-faint dark:text-slate-600">Scanned</p>
-                    <p className="text-[11px] font-mono text-ink-muted dark:text-slate-400">{result.timestamp}</p>
+
+                  <div className="shrink-0 flex items-center justify-center p-3 rounded-2xl bg-slate-50/70 dark:bg-white/[0.03] border border-slate-200/60 dark:border-white/5">
+                    <AppleCircularDial
+                      score={result.threatLevel === "dangerous" ? 95 : result.threatLevel === "suspicious" ? 62 : 8}
+                      verdict={result.threatLevel === "dangerous" ? "fraud" : result.threatLevel === "suspicious" ? "suspicious" : "genuine"}
+                      size={116}
+                      strokeWidth={10}
+                      lang={lang}
+                      showVerdictBadge={false}
+                    />
                   </div>
                 </div>
               </div>
@@ -1170,11 +1208,39 @@ export default function QRScanner({
                 </div>
               )}
 
-              {/* Download */}
-              <button onClick={downloadReport} className="sk-btn-primary w-full">
-                <Download className="w-4 h-4" />
-                {lang === "en" ? "Export Cryptographic Audit Dossier (JSON)" : "डिजिटल साक्ष्य दस्तावेज़ डाउनलोड करें (JSON)"}
-              </button>
+              {/* Download & Viral Share Shield */}
+              <div className="space-y-2 pt-1">
+                <button onClick={downloadReport} className="sk-btn-primary w-full cursor-pointer">
+                  <Download className="w-4 h-4" />
+                  {lang === "en" ? "Export Cryptographic Audit Dossier (JSON)" : "डिजिटल साक्ष्य दस्तावेज़ डाउनलोड करें (JSON)"}
+                </button>
+
+                <button
+                  onClick={() => {
+                    if (onOpenShareShield) {
+                      const computedVerdict: "genuine" | "suspicious" | "fraud" =
+                        result.threatLevel === "dangerous" ? "fraud" : result.threatLevel === "suspicious" ? "suspicious" : "genuine";
+                      const computedRiskScore =
+                        result.threatLevel === "dangerous" ? 95 : result.threatLevel === "suspicious" ? 65 : 8;
+                      onOpenShareShield({
+                        module: "QR & Link Scanner",
+                        verdict: computedVerdict,
+                        riskScore: computedRiskScore,
+                        target: result.decoded.rawText,
+                        evidence: result.flags.map((f) => `${f.label}: ${f.detail}`),
+                        sha256: result.flags.find((f) => f.label.includes("Hash"))?.detail,
+                        timestamp: new Date().toISOString(),
+                      });
+                    }
+                  }}
+                  className="w-full py-2.5 px-4 rounded-xl border border-indigo-500/40 bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 hover:from-indigo-500/20 hover:to-pink-500/20 text-indigo-700 dark:text-indigo-300 font-semibold text-xs flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
+                >
+                  <Share2 className="w-4 h-4 text-indigo-500" />
+                  {lang === "en"
+                    ? "🛡️ Generate Family Shield & Share Alert (WhatsApp/Instagram)"
+                    : "🛡️ फ़ैमिली शील्ड बनाएं व अलर्ट शेयर करें"}
+                </button>
+              </div>
             </>
           )}
         </div>

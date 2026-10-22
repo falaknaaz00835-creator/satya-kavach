@@ -33,9 +33,71 @@
 }
 
 @layer components {
-  /* Workbench card */
+  /* Workbench card (Glassmorphic upgrade) */
   .sk-card {
-    @apply bg-card rounded-xl border border-border shadow-card;
+    @apply bg-card/90 dark:bg-dark-card/80 backdrop-blur-md rounded-2xl border border-border/80 dark:border-white/10 shadow-card transition-all duration-200;
+  }
+
+  /* Apple iOS 18 Frosted Liquid Glass */
+  .sk-glass {
+    @apply bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border border-white/40 dark:border-white/10 shadow-lg;
+  }
+
+  .sk-glass-card {
+    @apply bg-white/80 dark:bg-[#121720]/80 backdrop-blur-xl border border-slate-200/80 dark:border-white/10 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)];
+  }
+
+  .sk-glass-card-elevated {
+    @apply bg-white/85 dark:bg-[#131926]/90 backdrop-blur-2xl border border-white/60 dark:border-white/10 rounded-3xl shadow-xl shadow-slate-900/5 dark:shadow-black/40 transition-all duration-300;
+  }
+
+  .sk-glass-subtle {
+    @apply bg-white/50 dark:bg-white/[0.04] backdrop-blur-md border border-slate-200/60 dark:border-white/5 rounded-xl;
+  }
+
+  /* Massive Immersive Hero Verdict Banner */
+  .sk-hero-verdict {
+    @apply relative overflow-hidden rounded-3xl p-6 sm:p-8 backdrop-blur-2xl border transition-all duration-300 shadow-xl;
+  }
+  .sk-hero-verdict-genuine {
+    @apply bg-gradient-to-br from-emerald-500/10 via-white/80 to-teal-500/5 dark:from-emerald-950/30 dark:via-[#111827]/90 dark:to-teal-950/20 border-emerald-500/30 dark:border-emerald-500/20 shadow-emerald-500/5 dark:shadow-emerald-950/20;
+  }
+  .sk-hero-verdict-warn {
+    @apply bg-gradient-to-br from-amber-500/10 via-white/80 to-yellow-500/5 dark:from-amber-950/30 dark:via-[#111827]/90 dark:to-yellow-950/20 border-amber-500/30 dark:border-amber-500/20 shadow-amber-500/5 dark:shadow-amber-950/20;
+  }
+  .sk-hero-verdict-fraud {
+    @apply bg-gradient-to-br from-rose-500/10 via-white/80 to-red-500/5 dark:from-rose-950/35 dark:via-[#111827]/90 dark:to-red-950/20 border-rose-500/30 dark:border-rose-500/25 shadow-rose-500/10 dark:shadow-rose-950/30;
+  }
+
+  /* Interactive Gradient Action Pill */
+  .sk-gradient-pill {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full font-semibold text-xs tracking-wide
+           hover:scale-[1.01] active:scale-95 transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer;
+  }
+
+  /* Tactile pressable micro-interaction */
+  .sk-pressable {
+    @apply active:scale-[0.97] transition-transform duration-150 ease-out cursor-pointer;
+  }
+
+  /* Ambient Mesh Glow container */
+  .sk-ambient-glow {
+    position: relative;
+    overflow: hidden;
+  }
+  .sk-ambient-glow::before {
+    content: '';
+    position: absolute;
+    top: -20%;
+    left: 20%;
+    width: 60%;
+    height: 40%;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, rgba(16, 185, 129, 0.05) 50%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .dark .sk-ambient-glow::before {
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(16, 185, 129, 0.08) 50%, transparent 70%);
   }
 
   /* Mono badge for UTR/hashes */
@@ -44,35 +106,35 @@
   }
 
   /* Status badge */
-  .sk-badge-trust  { @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-trust-bg text-trust; }
-  .sk-badge-warn   { @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-warning-bg text-warning; }
-  .sk-badge-fraud  { @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-fraud-bg text-fraud; }
+  .sk-badge-trust  { @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-sm; }
+  .sk-badge-warn   { @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-sm; }
+  .sk-badge-fraud  { @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 shadow-sm; }
 
-  /* Primary action button */
+  /* Primary action button (Apple / Google tactile styling) */
   .sk-btn-primary {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-ink text-white text-sm font-semibold
-           hover:bg-ink/90 active:scale-[0.98] transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-ink text-white text-sm font-semibold
+           hover:bg-ink/90 active:scale-[0.97] transition-all duration-200 ease-out shadow-sm hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer;
   }
 
   /* Secondary/ghost button */
   .sk-btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-border text-ink text-sm font-medium
-           hover:bg-surface active:scale-[0.98] transition-all duration-150;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 text-ink dark:text-slate-100 text-sm font-medium
+           hover:bg-slate-100 dark:hover:bg-white/5 active:scale-[0.97] transition-all duration-200 ease-out cursor-pointer;
   }
 
-  /* Sidebar nav item */
+  /* Sidebar nav item (Samsung One UI rounded squircles) */
   .sk-nav-item {
-    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-ink-muted
-           hover:bg-surface hover:text-ink transition-colors duration-150 cursor-pointer;
+    @apply flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-ink-muted dark:text-slate-400
+           hover:bg-slate-100 dark:hover:bg-white/[0.06] hover:text-ink dark:hover:text-white active:scale-[0.98] transition-all duration-150 cursor-pointer;
   }
   .sk-nav-item.active {
-    @apply bg-ink text-white hover:bg-ink/90;
+    @apply bg-slate-900 text-white dark:bg-white/15 dark:text-white shadow-sm;
   }
 
   /* Dark mode overrides */
-  .dark .sk-card          { @apply bg-dark-card border-dark-border; }
-  .dark .sk-nav-item      { @apply text-slate-400 hover:bg-dark-border hover:text-white; }
-  .dark .sk-nav-item.active { @apply bg-white/10 text-white; }
+  .dark .sk-card          { @apply bg-dark-card/90 border-white/10; }
+  .dark .sk-nav-item      { @apply text-slate-400 hover:bg-white/[0.06] hover:text-white; }
+  .dark .sk-nav-item.active { @apply bg-white/15 text-white; }
   .dark .sk-btn-primary   { @apply bg-white text-dark-surface hover:bg-white/90; }
-  .dark .sk-btn-ghost     { @apply border-dark-border text-slate-200 hover:bg-dark-border; }
+  .dark .sk-btn-ghost     { @apply border-white/10 text-slate-200 hover:bg-white/5; }
 }

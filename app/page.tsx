@@ -17,6 +17,9 @@ import {
   X,
   Activity,
   BookOpen,
+  Camera,
+  Share2,
+  Search,
 } from "lucide-react";
 import UPIInspector from "@/components/modules/UPIInspector";
 import QRScanner from "@/components/modules/QRScanner";
@@ -24,6 +27,9 @@ import JobScreener from "@/components/modules/JobScreener";
 import DeepfakeInspector from "@/components/modules/DeepfakeInspector";
 import DocumentInspector from "@/components/modules/DocumentInspector";
 import KavachCopilot from "@/components/KavachCopilot";
+import ARScannerView from "@/components/ARScannerView";
+import ShareShieldModal, { ShareShieldData } from "@/components/ShareShieldModal";
+import CommandPalette from "@/components/CommandPalette";
 
 /* ─────────────────────────────────────────
    Navigation module definitions
@@ -101,6 +107,11 @@ export default function WorkbenchShell() {
   const [lang, setLang] = useState<"en" | "hi">("en");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [logOpen, setLogOpen] = useState(false);
+  const [arOpen, setArOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareData, setShareData] = useState<ShareShieldData | null>(null);
+  const [activeQRTarget, setActiveQRTarget] = useState<string>("");
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const { count: auditCount, increment: recordAudit } = useAuditCounter();
 
   /* Toggle dark class on <html> */
@@ -108,10 +119,35 @@ export default function WorkbenchShell() {
     document.documentElement.classList.toggle("dark", dark);
   }, [dark]);
 
+  /* Global Cmd+K / Ctrl+K keyboard shortcut */
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  /* Global listener for Family Shield trigger from any module */
+  useEffect(() => {
+    const handleFamilyShield = (e: Event) => {
+      const custom = e as CustomEvent;
+      if (custom.detail) {
+        setShareData(custom.detail);
+        setShareOpen(true);
+      }
+    };
+    window.addEventListener("open-family-shield", handleFamilyShield);
+    return () => window.removeEventListener("open-family-shield", handleFamilyShield);
+  }, []);
+
   const currentModule = MODULES.find((m) => m.id === activeModule)!;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-surface dark:bg-dark-surface">
+    <div className="flex h-screen overflow-hidden bg-surface dark:bg-dark-surface sk-ambient-glow">
       {/* ── Sidebar ── */}
       <aside
         className={clsx(
@@ -215,7 +251,7 @@ export default function WorkbenchShell() {
       {/* ── Main area ── */}
       <div className="flex flex-col flex-1 min-w-0">
         {/* Top status bar */}
-        <header className="h-14 shrink-0 border-b border-border dark:border-dark-border bg-card dark:bg-dark-card flex items-center gap-4 px-6">
+        <header className="h-14 shrink-0 border-b border-border dark:border-dark-border bg-card/90 dark:bg-dark-card/90 backdrop-blur-md flex items-center gap-3 px-6">
           {/* Breadcrumb */}
           <div className="flex items-center gap-1.5 text-sm min-w-0">
             <span className="text-ink-muted dark:text-slate-400 shrink-0">Workbench</span>
@@ -225,8 +261,23 @@ export default function WorkbenchShell() {
             </span>
           </div>
 
+          {/* Apple Spotlight Search Trigger (⌘K) */}
+          <button
+            onClick={() => setPaletteOpen(true)}
+            className="flex items-center gap-2 text-xs text-ink-muted dark:text-slate-400 bg-surface dark:bg-white/[0.05] hover:bg-slate-200/70 dark:hover:bg-white/[0.1] border border-border dark:border-white/10 rounded-xl px-3 py-1.5 transition-all shadow-xs shrink-0 cursor-pointer ml-auto"
+            title="Open Command Palette (Ctrl+K or ⌘K)"
+          >
+            <Search className="w-3.5 h-3.5 text-indigo-500" />
+            <span className="hidden md:inline font-medium">
+              {lang === "en" ? "Search or Jump..." : "खोजें या चुनें..."}
+            </span>
+            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono text-slate-500 dark:text-slate-400 bg-card dark:bg-white/10 border border-border dark:border-white/10 rounded-md">
+              ⌘K
+            </kbd>
+          </button>
+
           {/* Live indicator */}
-          <div className="flex items-center gap-1.5 ml-auto shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-trust opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-trust" />
@@ -237,17 +288,56 @@ export default function WorkbenchShell() {
           </div>
 
           {/* Audit counter */}
-          <div className="flex items-center gap-1.5 shrink-0 text-xs text-ink-muted dark:text-slate-400 border-l border-border dark:border-dark-border pl-4">
+          <div className="flex items-center gap-1.5 shrink-0 text-xs text-ink-muted dark:text-slate-400 border-l border-border dark:border-dark-border pl-3">
             <Activity className="w-3.5 h-3.5" />
             <span className="font-mono">
               {auditCount} {lang === "en" ? "audits" : "जांच"}
             </span>
           </div>
 
+          {/* AR Camera Scan Trigger */}
+          <button
+            onClick={() => setArOpen(true)}
+            className="flex items-center gap-1.5 text-xs font-semibold bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 rounded-xl px-2.5 py-1.5 transition-all shadow-xs shrink-0 cursor-pointer active:scale-95"
+            title="Launch Live AR Camera Viewfinder Mode"
+          >
+            <Camera className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 animate-pulse" />
+            <span className="hidden sm:inline">📱 AR Camera</span>
+            <span className="sm:hidden">AR</span>
+          </button>
+
+          {/* Family Shield Share Trigger */}
+          <button
+            onClick={() => {
+              if (!shareData) {
+                setShareData({
+                  module: currentModule.label,
+                  verdict: "fraud",
+                  riskScore: 92,
+                  target: "upi://pay?pa=scam-phish@icici&am=25000&mode=02",
+                  evidence: [
+                    "Critical: mode=02 collect request masquerading as payment receipt",
+                    "Unverified payment handle flagged in cyber-cell registry",
+                    "Tampered transaction reference detected",
+                  ],
+                  sha256: "8e41a3bc89d9f58a7428c9472e3a152d1bc94539829f2710bbde54d249f0ad61",
+                  timestamp: new Date().toISOString(),
+                });
+              }
+              setShareOpen(true);
+            }}
+            className="flex items-center gap-1.5 text-xs font-semibold bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-700 dark:text-indigo-400 border border-indigo-500/30 rounded-xl px-2.5 py-1.5 transition-all shadow-xs shrink-0 cursor-pointer active:scale-95"
+            title="Open Multi-Platform Family Shield & Viral Share Drawer"
+          >
+            <Share2 className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+            <span className="hidden sm:inline">🛡️ Family Shield</span>
+            <span className="sm:hidden">Shield</span>
+          </button>
+
           {/* Language toggle */}
           <button
             onClick={() => setLang((l) => (l === "en" ? "hi" : "en"))}
-            className="flex items-center gap-1.5 text-xs font-medium text-ink-muted dark:text-slate-400 hover:text-ink dark:hover:text-white border border-border dark:border-dark-border rounded-lg px-2.5 py-1.5 transition-colors shrink-0"
+            className="flex items-center gap-1.5 text-xs font-medium text-ink-muted dark:text-slate-400 hover:text-ink dark:hover:text-white border border-border dark:border-dark-border rounded-xl px-2.5 py-1.5 transition-colors shrink-0 cursor-pointer active:scale-95"
             aria-label="Toggle language"
           >
             <Globe2 className="w-3.5 h-3.5" />
@@ -257,7 +347,7 @@ export default function WorkbenchShell() {
           {/* Dark mode toggle */}
           <button
             onClick={() => setDark((d) => !d)}
-            className="text-ink-muted dark:text-slate-400 hover:text-ink dark:hover:text-white border border-border dark:border-dark-border rounded-lg p-1.5 transition-colors shrink-0"
+            className="text-ink-muted dark:text-slate-400 hover:text-ink dark:hover:text-white border border-border dark:border-dark-border rounded-xl p-1.5 transition-colors shrink-0 cursor-pointer active:scale-95"
             aria-label="Toggle dark mode"
           >
             {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -267,10 +357,25 @@ export default function WorkbenchShell() {
         {/* Module content area */}
         <main className="flex-1 overflow-y-auto">
           {activeModule === "upi" && (
-            <UPIInspector lang={lang} onAuditComplete={recordAudit} />
+            <UPIInspector
+              lang={lang}
+              onAuditComplete={recordAudit}
+              onOpenShareShield={(data) => {
+                setShareData(data);
+                setShareOpen(true);
+              }}
+            />
           )}
           {activeModule === "qr" && (
-            <QRScanner lang={lang} onAuditComplete={recordAudit} />
+            <QRScanner
+              lang={lang}
+              onAuditComplete={recordAudit}
+              initialInput={activeQRTarget}
+              onOpenShareShield={(data) => {
+                setShareData(data);
+                setShareOpen(true);
+              }}
+            />
           )}
           {activeModule === "job" && (
             <JobScreener lang={lang} onAuditComplete={recordAudit} />
@@ -286,6 +391,61 @@ export default function WorkbenchShell() {
           )}
         </main>
       </div>
+
+      {/* ── AR Camera Viewfinder Overlay ── */}
+      {arOpen && (
+        <ARScannerView
+          lang={lang}
+          onClose={() => setArOpen(false)}
+          onDetectPayload={(payload) => {
+            if (payload.type === "qr" && payload.text) {
+              setActiveQRTarget(payload.text);
+              setActiveModule("qr");
+              setArOpen(false);
+            }
+          }}
+        />
+      )}
+
+      {/* ── Multi-Platform Family Shield & Viral Share Drawer ── */}
+      {shareOpen && shareData && (
+        <ShareShieldModal
+          data={shareData}
+          onClose={() => setShareOpen(false)}
+          lang={lang}
+        />
+      )}
+
+      {/* ── Apple Spotlight Command Palette Modal ── */}
+      <CommandPalette
+        isOpen={paletteOpen}
+        onClose={() => setPaletteOpen(false)}
+        lang={lang}
+        onSelectModule={setActiveModule}
+        onOpenAR={() => setArOpen(true)}
+        onOpenShareShield={() => {
+          if (!shareData) {
+            setShareData({
+              module: currentModule.label,
+              verdict: "fraud",
+              riskScore: 92,
+              target: "upi://pay?pa=scam-phish@icici&am=25000&mode=02",
+              evidence: [
+                "Critical: mode=02 collect request masquerading as payment receipt",
+                "Unverified payment handle flagged in cyber-cell registry",
+                "Tampered transaction reference detected",
+              ],
+              sha256: "8e41a3bc89d9f58a7428c9472e3a152d1bc94539829f2710bbde54d249f0ad61",
+              timestamp: new Date().toISOString(),
+            });
+          }
+          setShareOpen(true);
+        }}
+        onToggleDark={() => setDark((d) => !d)}
+        onToggleLang={() => setLang((l) => (l === "en" ? "hi" : "en"))}
+        isDark={dark}
+        auditCount={auditCount}
+      />
 
       {/* ── Kavach AI Security Copilot Floating Agent ── */}
       <KavachCopilot
