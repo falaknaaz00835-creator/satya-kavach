@@ -173,8 +173,7 @@ export default function WorkbenchShell() {
   const currentModule = MODULES.find((m) => m.id === activeModule)!;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-bg sk-ambient-glow p-0 md:p-3 md:gap-3">
-      {/* ── Sidebar (desktop) ── */}
+<div className="min-h-screen md:h-screen overflow-hidden bg-bg sk-ambient-glow flex flex-col md:flex-row p-0">      {/* ── Sidebar (desktop) ── */}
       <AppSidebar
         modules={MODULES}
         lang={lang}
