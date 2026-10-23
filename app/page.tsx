@@ -31,12 +31,19 @@ import ShareShieldModal, { ShareShieldData } from "@/components/ShareShieldModal
 import CommandPalette from "@/components/CommandPalette";
 import AppSidebar from "@/components/AppSidebar";
 import MobileTabBar from "@/components/MobileTabBar";
+import ImageForensics from '@/components/ImageForensics';
 import Button from "@/components/Button";
 
 /* ─────────────────────────────────────────
    Navigation module definitions
 ───────────────────────────────────────── */
 const MODULES = [
+  {
+  id: "forensics",
+  label: "Pixel Forensics",
+  labelHi: "पिक्सेल फ़ोरेंसिक्स",
+  icon: Camera, // You can use Camera or FileSearch from lucide-react
+}
   {
     id: "upi",
     label: "UPI Screenshot",
@@ -299,6 +306,7 @@ export default function WorkbenchShell() {
                   }}
                 />
               )}
+              {activeModule === 'forensics' && <ImageForensics />}
               {activeModule === "qr" && (
                 <QRScanner
                   lang={lang}
