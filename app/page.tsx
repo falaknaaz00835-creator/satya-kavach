@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import UPIInspector from "@/components/modules/UPIInspector";
 import QRScanner from "@/components/modules/QRScanner";
+import ThreatTicker from '@/components/ThreatTicker';
 import JobScreener from "@/components/modules/JobScreener";
 import DeepfakeInspector from "@/components/modules/DeepfakeInspector";
 import DocumentInspector from "@/components/modules/DocumentInspector";

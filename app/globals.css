@@ -45,6 +45,21 @@
     --color-warning: var(--color-suspicious);
     --color-fraud: var(--color-fake);
   }
+  @layer utilities {
+  .cyber-border {
+    border: 1px solid rgba(6, 182, 212, 0.3);
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.1);
+  }
+  .cyber-glow {
+    text-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+  }
+}
+
+body {
+  background-color: #030712;
+  color: #f3f4f6;
+  font-family: system-ui, -apple-system, sans-serif;
+}
 
   html.light,
   .light {
