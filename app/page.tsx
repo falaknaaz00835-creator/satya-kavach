@@ -21,8 +21,10 @@ import {
   Search,
 } from "lucide-react";
 import UPIInspector from "@/components/modules/UPIInspector";
+import StepWizard from '@/components/StepWizard';
 import QRScanner from "@/components/modules/QRScanner";
 import ThreatTicker from '@/components/ThreatTicker';
+import LinkScanner from '@/components/LinkScanner';
 import JobScreener from "@/components/modules/JobScreener";
 import DeepfakeInspector from "@/components/modules/DeepfakeInspector";
 import DocumentInspector from "@/components/modules/DocumentInspector";
@@ -31,6 +33,7 @@ import ARScannerView from "@/components/ARScannerView";
 import ShareShieldModal, { ShareShieldData } from "@/components/ShareShieldModal";
 import CommandPalette from "@/components/CommandPalette";
 import AppSidebar from "@/components/AppSidebar";
+import LinkScanner from '@/components/LinkScanner';
 import MobileTabBar from "@/components/MobileTabBar";
 import ImageForensics from '@/components/ImageForensics';
 import Button from "@/components/Button";
@@ -44,7 +47,14 @@ const MODULES = [
   label: "Pixel Forensics",
   labelHi: "पिक्सेल फ़ोरेंसिक्स",
   icon: Camera, // You can use Camera or FileSearch from lucide-react
-}
+  },
+  {
+  id: "workflow",
+  label: "Forensic Workflow",
+  labelHi: "फ़ोरेंसिक वर्कफ़्लो",
+  icon: ShieldCheck, // Or any Lucide icon you prefer
+  },
+
   {
     id: "upi",
     label: "UPI Screenshot",
@@ -77,6 +87,12 @@ const MODULES = [
     status: "live" as const,
     description: "Video & face-swap forensics",
   },
+  {
+  id: "links",
+  label: "Link Inspector",
+  labelHi: "लिंक इंस्पेक्टर",
+  icon: FileSearch, // Or any icon from lucide-react
+ },
   {
     id: "document",
     label: "Document Forensics",
@@ -308,6 +324,7 @@ export default function WorkbenchShell() {
                 />
               )}
               {activeModule === 'forensics' && <ImageForensics />}
+              {activeModule === 'workflow' && <StepWizard />}
               {activeModule === "qr" && (
                 <QRScanner
                   lang={lang}
@@ -328,6 +345,7 @@ export default function WorkbenchShell() {
               {activeModule === "document" && (
                 <DocumentInspector lang={lang} onAuditComplete={recordAudit} />
               )}
+              {activeModule === 'links' && <LinkScanner />}
               {activeModule !== "upi" && activeModule !== "qr" && activeModule !== "job" && activeModule !== "deepfake" && activeModule !== "document" && (
                 <ComingSoon module={currentModule} lang={lang} />
               )}
