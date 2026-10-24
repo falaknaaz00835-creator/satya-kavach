@@ -36,6 +36,7 @@ import AppSidebar from "@/components/AppSidebar";
 import LinkScanner from '@/components/LinkScanner';
 import MobileTabBar from "@/components/MobileTabBar";
 import ImageForensics from '@/components/ImageForensics';
+import UTRScanner from '@/components/UTRScanner';
 import Button from "@/components/Button";
 
 /* ─────────────────────────────────────────
@@ -78,6 +79,12 @@ const MODULES = [
     icon: BriefcaseBusiness,
     status: "live" as const,
     description: "Fake offer letter screener",
+  },
+  {
+  id: 'utr-scanner',
+  label: 'UTR Validator',
+  icon: '🔢', // Or whatever icon system you are using (Lucide/Heroicons)
+  component: <UTRScanner />
   },
   {
     id: "deepfake",
