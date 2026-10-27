@@ -33,7 +33,6 @@ import ARScannerView from "@/components/ARScannerView";
 import ShareShieldModal, { ShareShieldData } from "@/components/ShareShieldModal";
 import CommandPalette from "@/components/CommandPalette";
 import AppSidebar from "@/components/AppSidebar";
-import LinkScanner from '@/components/LinkScanner';
 import MobileTabBar from "@/components/MobileTabBar";
 import ImageForensics from '@/components/ImageForensics';
 import UTRScanner from '@/components/UTRScanner';

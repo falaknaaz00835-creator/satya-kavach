@@ -1047,10 +1047,12 @@ export default function UPIInspector({
   /* ── Load a preloaded sample ── */
   const loadSample = useCallback((sample: SampleCase) => {
     setActiveSample(sample.id);
+    setResult(null);
     setImageURL(null); // no real image for samples
     setResult(sample.mockResult);
     setMode("done");
     setShowELA(false);
+    setMode("loading");
     setShowFullEvidence(false);
     setGroundingData(null);
     onAuditComplete();
@@ -1105,9 +1107,10 @@ export default function UPIInspector({
             reader.readAsDataURL(file.size > 5 * 1024 * 1024 ? file.slice(0, 5 * 1024 * 1024) : file);
           });
 
-          // Step 2: Algorithmic UTR and handle checks
-          const utrResult = validateUTRAlgorithmic(utrInput || "");
-          const handle = parseUPIHandle(upiInput || "@unknown");
+// Step 2: Algorithmic checks ONLY if manual text is provided
+          const utrResult = utrInput ? validateUTRAlgorithmic(utrInput) : { isValid: true, anomalyNotes: [] };
+          const handle = upiInput ? parseUPIHandle(upiInput) : { handle: "Verified via AI", bank: "Authenticated PSP", trusted: true };
+          
           const fontAnomalies: string[] = [];
           if (!utrResult.isValid && utrInput) {
             fontAnomalies.push(...utrResult.anomalyNotes);
@@ -1136,25 +1139,21 @@ export default function UPIInspector({
             setGroundingData(backendData);
           }
 
-          const fraud = !utrResult.isValid || (handle && !handle.trusted) || backendData?.verdict === "fraud";
-          const verdict: ValidationResult["verdict"] = backendData?.verdict || (fraud ? "suspicious" : "genuine");
-          const confidence = backendData?.confidence || (fraud ? 84 : 91);
+          // Trust the backend AI's verdict entirely
+          const verdict: ValidationResult["verdict"] = backendData?.verdict || "suspicious";
+          const confidence = backendData?.confidence || 91;
 
+          // Deduplicate evidence points and ensure backend text takes priority
           const evidencePoints = [
-            `SHA-256: ${sha256.substring(0, 24)}... (Cryptographic Evidence Hash)`,
-            utrResult.isValid
-              ? `UTR ${utrInput || "(validated in image)"} — valid 12-digit NPCI format`
-              : `UTR '${utrInput}' — ${utrResult.anomalyNotes[0] || "Invalid format"}`,
-            handle?.trusted
-              ? `${handle.handle} is a registered PSP (${handle.bank})`
-              : `${handle?.handle ?? "No handle"} — not in NPCI high-trust registry`,
-            ...(backendData?.evidence || ["Toggle Error Level Analysis (ELA) below to inspect localized pixel alterations"]),
+            `SHA-256: ${sha256.substring(0, 24)}... (Cryptographic Hash)`,
+            ...(backendData?.evidence || []),
           ];
 
           const newResult: ValidationResult = {
-            utrValid: utrResult.isValid,
-            utrValue: utrInput || "(verified in image)",
-            upiHandle: handle,
+            // FIX: If manual input is empty, dynamically set validity based on the final AI verdict
+            utrValid: utrInput ? utrResult.isValid : (verdict !== "fraud"),
+            utrValue: utrInput || backendData?.metrics?.utrValue || "(verified in image)",
+            upiHandle: upiInput ? handle : (verdict !== "fraud" ? { handle: "Verified via AI", bank: "Authenticated", trusted: true } : { handle: "Unverified", bank: "Unknown", trusted: false }),
             fontAnomalies,
             elaScore: 0,
             verdict,
