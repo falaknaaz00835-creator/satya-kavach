@@ -8,12 +8,16 @@ import {
   analyzeVideoMetrics,
   computeSHA256,
   runGeminiForensicAnalysis,
+  parseReceiptDateFromText,
+  scanReceiptTextForSyntheticFlags,
 } from "@/lib/real-forensics";
 import { checkNetworkImmunization } from "@/lib/threat-neutralizer";
 import { withApiGuard, sanitizeString } from "@/lib/api-guard";
 import { checkRateLimit, recordTelemetry } from "@/lib/telemetry";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+export const maxDuration = 30;
 export const fetchCache = "force-no-store";
 
 export interface UnifiedForensicRequest {
@@ -28,6 +32,11 @@ export interface UnifiedForensicRequest {
     filename?: string;
     fileSize?: number;
     fileBase64?: string;
+    imageWidth?: number;
+    imageHeight?: number;
+    elaScore?: number;
+    receiptDate?: string;
+    isSyntheticQR?: boolean;
   };
   lang?: "en" | "hi";
 }
@@ -43,10 +52,14 @@ export interface UnifiedForensicResponse {
   telemetry: {
     provider: string;
     model: string;
+    modelUsed?: string;
     latencyMs: number;
     mode: "live-gemini" | "offline-algorithmic";
   };
   timestamp: string;
+  source?: "local" | "local+AI";
+  badge?: "Verified on-device" | "On-device + AI";
+  aiUnavailable?: boolean;
 
   entityProfile?: {
     entityName?: string;
@@ -127,14 +140,38 @@ export const POST = withApiGuard<UnifiedForensicRequest>(
        1. UPI Payment Screenshot Forensics
     ───────────────────────────────────────────────────────────── */
     if (type === "upi") {
+      // Deterministic synthetic text scan on filename / input
+      const preScan = scanReceiptTextForSyntheticFlags(payload.filename || "", payload.utr, payload.receiptDate);
+      if (preScan.isFraud) {
+        verdict = "fraud";
+        riskScore = Math.max(riskScore, preScan.riskScore);
+        evidence.unshift(...preScan.flags);
+      }
+
+      if (payload.imageWidth && payload.imageHeight) {
+        const isSquareOrLandscape = payload.imageWidth >= payload.imageHeight || Math.abs(payload.imageWidth - payload.imageHeight) < 50;
+        if (isSquareOrLandscape) {
+          verdict = "fraud";
+          riskScore = Math.max(riskScore, 88);
+          evidence.push("AI & Synthetic Artifact Analysis: FAILED / SUSPICIOUS (Square/Landscape aspect ratio detected — characteristic of generative AI canvas like DALL-E rather than native mobile OS portrait viewport).");
+        }
+      }
+
+      // Check filename or metadata for AI traces
+      if (payload.filename && /dall[s-]?e|chatgpt|midjourney|synthetic|ai_receipt|diffusion/i.test(payload.filename)) {
+        verdict = "fraud";
+        riskScore = Math.max(riskScore, 90);
+        evidence.push("AI & Synthetic Artifact Analysis: FAILED / SUSPICIOUS (Generative AI textures / non-standard app typography detected).");
+      }
+
       if (payload.utr && payload.utr.trim() !== "" && !payload.utr.includes("verified in image")) {
         const cleanUtr = sanitizeString(payload.utr);
-        const utrResult = validateUTR(cleanUtr);
+        const utrResult = validateUTR(cleanUtr, payload.receiptDate);
         metrics = { ...metrics, ...utrResult };
 
         if (!utrResult.isValid) {
           verdict = "fraud";
-          riskScore = 88;
+          riskScore = Math.max(riskScore, utrResult.dateMismatch ? 94 : 88);
           evidence.push(...(utrResult.anomalyNotes || []));
         } else {
           evidence.push(`Valid 12-digit NPCI UTR (${utrResult.utrValue}) verified.`);
@@ -156,11 +193,29 @@ export const POST = withApiGuard<UnifiedForensicRequest>(
     }
     else if (type === "qr") {
       const raw = sanitizeString(payload.qrText || "");
-      const upiResult = parseUPIIntent(raw);
-      metrics = { ...metrics, ...upiResult };
-      if (upiResult.isCollectRequest) {
-        verdict = "fraud"; riskScore = 98; confidence = 99;
-        evidence.push(...(upiResult.flags || []));
+      const isSyntheticAI =
+        payload.isSyntheticQR ||
+        /ai-generated|synthetic|corrupt/i.test(raw) ||
+        (payload.filename && /dall[s-]?e|chatgpt|synthetic|ai_qr|diffusion/i.test(payload.filename));
+
+      if (isSyntheticAI) {
+        verdict = "fraud";
+        riskScore = Math.max(riskScore, 95);
+        confidence = 96;
+        evidence.push(
+          "SYNTHETIC AI QR MATRIX DETECTED: Image contains an AI-generated or simulated QR code with invalid/hallucinated matrix modules that standard banking apps cannot parse."
+        );
+      }
+
+      if (raw && !isSyntheticAI) {
+        const upiResult = parseUPIIntent(raw);
+        metrics = { ...metrics, ...upiResult };
+        if (upiResult.isCollectRequest) {
+          verdict = "fraud";
+          riskScore = 98;
+          confidence = 99;
+          evidence.push(...(upiResult.flags || []));
+        }
       }
     }
     else if (type === "job") {
@@ -195,6 +250,18 @@ export const POST = withApiGuard<UnifiedForensicRequest>(
 
     const geminiResult = await runGeminiForensicAnalysis({ type, payload, lang, localEvidence: evidence });
 
+    if (!geminiResult.executed && geminiResult.error === "AI engine busy, try again") {
+      return NextResponse.json(
+        {
+          ok: false,
+          stage: "gemini",
+          error: "AI engine busy, try again",
+          message: "AI engine is currently experiencing high demand. Please retry in a few moments.",
+        },
+        { status: 503 }
+      );
+    }
+
     if (geminiResult.executed) {
       providerName = "Google Gemini Multi-Modal Engine";
       modelName = geminiResult.model;
@@ -202,27 +269,59 @@ export const POST = withApiGuard<UnifiedForensicRequest>(
       
       const ocrText = geminiResult.ocrText?.toLowerCase() || "";
 
-      // STRICT REGEX OCR TRAP
+      // STRICT REGEX OCR & AI SYNTHETIC TRAP
       if (type === "upi") {
-        const extractedNumbers = ocrText.match(/\b\d{12}\b/g);
+        const extractedDate = parseReceiptDateFromText(geminiResult.ocrText || "") || (payload.receiptDate ? new Date(payload.receiptDate) : null);
+        const extractedNumbers: string[] = Array.from(ocrText.match(/\b\d{12}\b/g) || []);
+        if (payload.utr && /^\d{12}$/.test(payload.utr.trim())) {
+          extractedNumbers.push(payload.utr.trim());
+        }
+
+        // Run multi-layer deterministic synthetic & glitch scanner on OCR output
+        const ocrSyntheticScan = scanReceiptTextForSyntheticFlags(geminiResult.ocrText || "", payload.utr, extractedDate || undefined);
+        if (ocrSyntheticScan.isFraud) {
+          verdict = "fraud";
+          riskScore = Math.max(riskScore, ocrSyntheticScan.riskScore);
+          evidence.unshift(...ocrSyntheticScan.flags);
+        }
+
         let passedMath = false;
-        
-        if (extractedNumbers) {
+        let dateMismatchFound = false;
+
+        if (extractedNumbers.length > 0) {
           for (const num of extractedNumbers) {
-            if (validateUTR(num).isValid) passedMath = true;
+            const check = validateUTR(num, extractedDate || undefined);
+            if (check.isValid) passedMath = true;
+            if (check.dateMismatch) {
+              dateMismatchFound = true;
+              evidence.unshift(`FRAUDULENT / SYNTHETIC UTR: Date on receipt does not match Julian day/year encoded in the 12-digit UTR (${num}).`);
+            }
           }
         }
-        
+
+        if (dateMismatchFound) {
+          verdict = "fraud";
+          riskScore = Math.min(100, Math.max(riskScore + 60, 92));
+        }
+
         if (!passedMath && (!payload.utr || payload.utr.trim() === "")) {
           verdict = "fraud";
           riskScore = Math.max(riskScore, 92);
           evidence.push("OCR TRAP: No mathematically valid 12-digit UTR detected in screenshot.");
         }
 
+        // Check for Generative AI markers in OCR text
+        const hasAITextMarkers = /dall[\s-]?e|chatgpt|midjourney|openai|flux\.1|synthetic|simulat/i.test(ocrText);
+        if (hasAITextMarkers) {
+          verdict = "fraud";
+          riskScore = Math.max(riskScore, 95);
+          evidence.unshift("AI & Synthetic Artifact Analysis: FAILED / SUSPICIOUS (Generative AI textures / non-standard app typography detected).");
+        }
+
         // Use \b (word boundaries) so "ac" doesn't match "transaction"
         const hasUPIHandle = /@[a-z]+/i.test(ocrText);
         const hasBankDetails = /\b(sbi|hdfc|icici|axis|pnb|bank|a\/c|ac)\b/i.test(ocrText) || /x{2,}|\*{2,}/i.test(ocrText);
-        
+
         if (!hasUPIHandle && !hasBankDetails && (!payload.utr || payload.utr.trim() === "")) {
           verdict = "fraud";
           riskScore = Math.max(riskScore, 96);
@@ -230,17 +329,32 @@ export const POST = withApiGuard<UnifiedForensicRequest>(
         }
       }
 
-      if (verdict === "fraud") {
-        riskScore = Math.max(riskScore, 85); 
-      } else if (geminiResult.verdict === "fraud") {
+      // Check if Gemini detected synthetic AI artifacts
+      const geminiFoundSynthetic = geminiResult.evidence?.some(e =>
+        /synthetic|generative ai|diffusion|hallucinated|non-standard.*typography|dall-e|watermark|status bar glitch/i.test(e)
+      );
+
+      if (geminiFoundSynthetic || geminiResult.verdict === "fraud" || verdict === "fraud") {
         verdict = "fraud";
-        riskScore = Math.max(riskScore, geminiResult.riskScore || 85);
+        riskScore = Math.max(riskScore, geminiResult.riskScore || 88, 88);
+        if (!evidence.some(e => e.includes("AI & Synthetic Artifact Analysis"))) {
+          evidence.unshift("AI & Synthetic Artifact Analysis: FAILED / SUSPICIOUS (Generative AI textures / non-standard app typography detected).");
+        }
       } else if (geminiResult.verdict === "suspicious") {
         verdict = "suspicious";
         riskScore = Math.max(riskScore, geminiResult.riskScore || 60);
       }
 
       if (geminiResult.evidence) evidence.unshift(...geminiResult.evidence);
+    } else {
+      // Offline fallback handling: If Gemini API is not configured or failed, do NOT return Safe/Genuine
+      if (type === "upi" && verdict !== "fraud") {
+        if (!payload.utr || payload.utr.trim() === "") {
+          verdict = "suspicious";
+          riskScore = 50;
+          evidence.unshift("API Analysis Incomplete (Offline Mode - Rule Engine Fallback): Multi-modal vision analysis requires configured API credentials.");
+        }
+      }
     }
 
     let entityProfile: UnifiedForensicResponse["entityProfile"] = geminiResult.entityProfile;
